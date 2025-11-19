@@ -1,0 +1,124 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+
+:root {
+  --color-primary: #2f6efb;
+  --color-primary-hover: #1952c3;
+  --color-bg: #f7faff;
+  --color-card: #ffffff;
+  --color-text: #1b1f27;
+  --color-border: #e5e8f0;
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+body {
+  font-family: 'Roboto', sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+/* Login Page Layout */
+.login-container {
+  display: flex;
+  height: 100vh;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(120deg, #f7faff 0%, #e6eeff 100%);
+}
+
+.login-card {
+  background: var(--color-card);
+  padding: 2.5rem 2rem;
+  border-radius: 10px;
+  box-shadow: var(--shadow-md);
+  width: 400px;
+  text-align: center;
+  position: relative; /* 👈 necessary for absolute positioning */
+}
+
+.login-card img {
+  width: 200px;
+  margin-bottom: 1.5rem;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.login-card::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 88px; /* 👈 adjust this based on your logo height (try between 85–95px) */
+  width: 65%;
+  height: 1px;
+  background-color: rgba(0, 0, 0, 0.12);
+}
+
+
+.login-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: var(--color-primary-hover);
+}
+
+.login-subtitle {
+  color: #6c757d;
+  font-size: .9rem;
+  font-weight: 600;
+  margin-top: 2.5rem;  /* 👈 new line added for correct spacing */
+  margin-bottom: 2rem;
+}
+/* Form */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.login-form input {
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  outline: none;
+  font-size: 0.9rem;
+  transition: border-color 0.2s ease;
+}
+
+.login-form input:focus {
+  border-color: var(--color-primary);
+}
+
+.login-btn {
+  background: var(--color-primary);
+  color: #fff;
+  padding: 0.9rem 1rem;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.login-btn:hover {
+  background: var(--color-primary-hover);
+}
+
+.forgot-link {
+  font-size: 0.9rem;
+  color: var(--color-primary);
+  text-decoration: none;
+  margin-top: 0.5rem;
+  display: inline-block;
+  
+}
+
+.forgot-link:hover {
+  text-decoration: underline;
+}
+
+.error-message {
+  color: #dc3545;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
