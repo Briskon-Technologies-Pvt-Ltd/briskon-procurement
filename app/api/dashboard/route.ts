@@ -5,7 +5,6 @@ import { createClient } from "@supabase/supabase-js";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-// service-role client because this is a backend route
 const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
 type AnyRecord = Record<string, any>;
@@ -13,7 +12,6 @@ type AnyRecord = Record<string, any>;
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
 
-  // support multiple possible param names, falls back to "all orgs"
   const organizationId =
     searchParams.get("org_id") ||
     searchParams.get("organization_id") ||
@@ -21,51 +19,70 @@ export async function GET(request: Request) {
     null;
 
   const applyOrgFilter = (query: any, column = "organization_id") => {
-    if (organizationId) {
-      return query.eq(column, organizationId);
-    }
+    if (organizationId) return query.eq(column, organizationId);
     return query;
   };
 
+  // =====================================================
+  // Helper: Resolve readable entity name from type + ID
+  // =====================================================
+  async function resolveEntityName(entityType: string, entityId: string) {
+    try {
+      switch (entityType) {
+        case "requisition": {
+          const { data } = await supabase.from("requisitions").select("description").eq("id", entityId).single();
+          return data?.description || `Requisition ${entityId.slice(0, 6)}`;
+        }
+        case "rfq": {
+          const { data } = await supabase.from("rfqs").select("title").eq("id", entityId).single();
+          return data?.title || `RFQ ${entityId.slice(0, 6)}`;
+        }
+        case "auction": {
+          const { data } = await supabase
+            .from("auctions")
+            .select("id, rfq:rfqs ( title )")
+            .eq("id", entityId)
+            .single();
+          return data?.rfq?.title || `Auction ${entityId.slice(0, 6)}`;
+        }
+        case "purchase_order": {
+          const { data } = await supabase.from("purchase_orders").select("po_number").eq("id", entityId).single();
+          return data?.po_number || `PO ${entityId.slice(0, 6)}`;
+        }
+        case "supplier": {
+          const { data } = await supabase.from("suppliers").select("company_name").eq("id", entityId).single();
+          return data?.company_name || `Supplier ${entityId.slice(0, 6)}`;
+        }
+        case "award":
+          return `Award ${entityId.slice(0, 6)}`;
+
+        default:
+          return `${entityType} ${entityId.slice(0, 6)}`;
+      }
+    } catch {
+      return `${entityType} ${entityId.slice(0, 6)}`;
+    }
+  }
+
   try {
-    // ------- KPI COUNTS -------
-    const requisitionsPromise = applyOrgFilter(
-      supabase.from("requisitions").select("id", { count: "exact" })
-    );
+    // COUNT KPIs
+    const requisitionsPromise = applyOrgFilter(supabase.from("requisitions").select("id", { count: "exact" }));
+    const rfqsPromise = applyOrgFilter(supabase.from("rfqs").select("id", { count: "exact" }));
+    const auctionsPromise = applyOrgFilter(supabase.from("auctions").select("id", { count: "exact" }));
+    const suppliersPromise = applyOrgFilter(supabase.from("suppliers").select("id", { count: "exact" }), "org_onboarded_to");
+    const awardsPromise = applyOrgFilter(supabase.from("awards").select("id", { count: "exact" }));
 
-    const rfqsPromise = applyOrgFilter(
-      supabase.from("rfqs").select("id", { count: "exact" })
-    );
+    // Spend
+    const spendPromise = applyOrgFilter(supabase.from("requisitions").select("cost_center, estimated_value"));
 
-    const auctionsPromise = applyOrgFilter(
-      supabase.from("auctions").select("id", { count: "exact" })
-    );
+    // Awards per month
+    const awardsForPerfPromise = applyOrgFilter(supabase.from("awards").select("id, awarded_at"));
 
-    const suppliersPromise = applyOrgFilter(
-      supabase.from("suppliers").select("id", { count: "exact" }),
-      "org_onboarded_to"
-    );
-
-    const awardsPromise = applyOrgFilter(
-      supabase.from("awards").select("id", { count: "exact" })
-    );
-
-    // ------- SPEND BY CATEGORY (using requisitions.cost_center) -------
-    const spendPromise = applyOrgFilter(
-      supabase.from("requisitions").select("cost_center, estimated_value")
-    );
-
-    // ------- SUPPLIER PERFORMANCE (approx: awards per month) -------
-    const awardsForPerfPromise = applyOrgFilter(
-      supabase.from("awards").select("id, awarded_at")
-    );
-
-    // ------- LISTS FOR CARDS -------
+    // Cards Data
     const auctionsListPromise = applyOrgFilter(
       supabase
         .from("auctions")
-        .select(
-          `
+        .select(`
           id,
           auction_type,
           start_at,
@@ -74,8 +91,7 @@ export async function GET(request: Request) {
           created_at,
           rfq:rfqs ( title ),
           organization:organizations ( name )
-        `
-        )
+        `)
         .order("created_at", { ascending: false })
         .limit(10)
     );
@@ -83,15 +99,13 @@ export async function GET(request: Request) {
     const proposalsListPromise = applyOrgFilter(
       supabase
         .from("proposal_submissions")
-        .select(
-          `
+        .select(`
           id,
           status,
           submitted_at,
           rfq:rfqs ( id, title ),
           supplier:suppliers ( company_name )
-        `
-        )
+        `)
         .order("submitted_at", { ascending: false })
         .limit(10)
     );
@@ -99,8 +113,7 @@ export async function GET(request: Request) {
     const purchaseOrdersPromise = applyOrgFilter(
       supabase
         .from("purchase_orders")
-        .select(
-          `
+        .select(`
           id,
           po_number,
           total_amount,
@@ -109,8 +122,7 @@ export async function GET(request: Request) {
           due_date,
           created_at,
           supplier:suppliers ( company_name )
-        `
-        )
+        `)
         .order("created_at", { ascending: false })
         .limit(10)
     );
@@ -118,7 +130,14 @@ export async function GET(request: Request) {
     const approvalsPromise = applyOrgFilter(
       supabase
         .from("approvals")
-        .select("id, entity_type, entity_id, status, created_at")
+        .select(`
+          id,
+          entity_type,
+          entity_id,
+          status,
+          created_at,
+          created_by:profiles ( fname, lname )
+        `)
         .order("created_at", { ascending: false })
         .limit(10)
     );
@@ -126,19 +145,17 @@ export async function GET(request: Request) {
     const notificationsPromise = applyOrgFilter(
       supabase
         .from("notifications")
-        .select("id, message, type, created_at")
+        .select("id, message, type, related_entity, entity_id, created_at")
         .order("created_at", { ascending: false })
-        .limit(15),
-      // notifications are per profile normally, but we leave org filter as-is
+        .limit(10),
       "recipient_profile_id"
     );
 
-    // Use messages table (not notifications) – very defensive on columns
     const messagesPromise = supabase
       .from("messages")
-      .select("*")
+      .select("id, subject, message, body, created_at")
       .order("created_at", { ascending: false })
-      .limit(15);
+      .limit(10);
 
     const [
       requisitionsRes,
@@ -170,31 +187,7 @@ export async function GET(request: Request) {
       messagesPromise,
     ]);
 
-    // Basic error bubbling (only log; still try to return what we can)
-    const allErrors = [
-      requisitionsRes.error,
-      rfqsRes.error,
-      auctionsResCount.error,
-      suppliersRes.error,
-      awardsResCount.error,
-      spendRes.error,
-      awardsForPerfRes.error,
-      auctionsListRes.error,
-      proposalsListRes.error,
-      purchaseOrdersRes.error,
-      approvalsRes.error,
-      notificationsRes.error,
-      messagesRes.error,
-    ].filter(Boolean);
-
-    if (allErrors.length) {
-      console.error(
-        "Dashboard API errors:",
-        allErrors.map((e: any) => e.message || e)
-      );
-    }
-
-    // ------- KPIs -------
+    // KPIs JSON (unchanged)
     const kpis = {
       totalRequisitions: requisitionsRes.count ?? 0,
       activeRfqs: rfqsRes.count ?? 0,
@@ -203,7 +196,7 @@ export async function GET(request: Request) {
       awardsIssued: awardsResCount.count ?? 0,
     };
 
-    // ------- Spend by category (cost_center) -------
+    // Spend map
     const spendRows = (spendRes.data ?? []) as AnyRecord[];
     const spendMap = new Map<string, number>();
     for (const row of spendRows) {
@@ -216,31 +209,19 @@ export async function GET(request: Request) {
       .sort((a, b) => b.total - a.total)
       .slice(0, 6);
 
-    // ------- Supplier performance (awards per month) -------
+    // Awards performance
     const perfRows = (awardsForPerfRes.data ?? []) as AnyRecord[];
     const perfMap = new Map<string, number>();
-
     for (const row of perfRows) {
       if (!row.awarded_at) continue;
       const d = new Date(row.awarded_at);
       const key = d.toLocaleString("default", { month: "short" });
       perfMap.set(key, (perfMap.get(key) || 0) + 1);
     }
+    const supplierPerformance = Array.from(perfMap.entries()).map(([month, count]) => ({ month, score: count }));
 
-    const supplierPerformance = Array.from(perfMap.entries())
-      .map(([month, count]) => ({
-        month,
-        score: count, // can later normalise to 100-scale if you want
-      }))
-      .sort(
-        (a, b) =>
-          new Date(`${a.month} 1, 2000`).getTime() -
-          new Date(`${b.month} 1, 2000`).getTime()
-      );
-
-    // ------- Auctions list -------
-    const auctionsRows = (auctionsListRes.data ?? []) as AnyRecord[];
-    const auctions = auctionsRows.map((row) => ({
+    // Auctions
+    const auctions = (auctionsListRes.data ?? []).map((row: any) => ({
       id: row.id,
       title: row.rfq?.title || "Auction",
       start_at: row.start_at,
@@ -250,67 +231,64 @@ export async function GET(request: Request) {
       organization: row.organization?.name || "Organization",
     }));
 
-    // ------- Proposals / submissions -------
-    const proposalRows = (proposalsListRes.data ?? []) as AnyRecord[];
-    const proposals = proposalRows.map((row) => ({
+    // Proposals
+    const proposals = (proposalsListRes.data ?? []).map((row: any) => ({
       id: row.id,
       rfq_ref: row.rfq?.id || row.rfq?.title || "RFQ",
       supplier_name: row.supplier?.company_name || "Supplier",
       status: row.status,
     }));
 
-    // ------- Purchase orders -------
-    const poRows = (purchaseOrdersRes.data ?? []) as AnyRecord[];
-    const purchaseOrders = poRows.map((row) => ({
+    // Purchase Orders
+    const purchaseOrders = (purchaseOrdersRes.data ?? []).map((row: any) => ({
       id: row.id,
       po_number: row.po_number,
       supplier_name: row.supplier?.company_name || "Supplier",
       total: Number(row.total_amount || 0),
-      currency: row.currency || "USD",
+      currency: row.currency,
       status: row.status,
       due_date: row.due_date,
     }));
 
-    // ------- Approvals -------
-    const approvalsRows = (approvalsRes.data ?? []) as AnyRecord[];
-    const approvals = approvalsRows.map((row) => ({
-      id: row.id,
-      entity_type: row.entity_type,
-      entity_id: row.entity_id,
-      status: row.status,
-      created_at: row.created_at,
-    }));
-
-    // ------- Notifications (recent activity) -------
-    const notificationRows = (notificationsRes.data ?? []) as AnyRecord[];
-    const notifications = notificationRows.map((row) => ({
-      id: row.id,
-      message: row.message,
-      type: row.type,
-      created_at: row.created_at,
-    }));
-
-    // ------- Messages (from messages table) -------
-    let messages: AnyRecord[] = [];
-    if (!messagesRes.error) {
-      const msgRows = (messagesRes.data ?? []) as AnyRecord[];
-      messages = msgRows.map((row) => ({
+    // Approvals (resolved name)
+    const approvals = await Promise.all(
+      (approvalsRes.data ?? []).map(async (row: any) => ({
         id: row.id,
-        subject:
-          row.subject ||
-          row.title ||
-          (row.message ? row.message.slice(0, 60) : "") ||
-          (row.body ? row.body.slice(0, 60) : "") ||
-          "Message",
-        body: row.body || row.message || row.content || "",
-        created_at: row.created_at || row.sent_at || null,
-      }));
-    } else {
-      // If messages table genuinely doesn’t exist, just return empty
-      messages = [];
-    }
+        entity_type: row.entity_type,
+        entity_id: row.entity_id,
+        entity_name: await resolveEntityName(row.entity_type, row.entity_id),
+        requester_name: `${row.created_by?.fname || ""} ${row.created_by?.lname || ""}`.trim(),
+        status: row.status,
+        created_at: row.created_at,
+      }))
+    );
 
-    const payload = {
+    // Notifications (resolved name)
+    const notifications = await Promise.all(
+      (notificationsRes.data ?? []).map(async (row: any) => ({
+        id: row.id,
+        message: row.message,
+        type: row.type,
+        created_at: row.created_at,
+        related_entity_name: row.entity_id
+          ? await resolveEntityName(row.related_entity, row.entity_id)
+          : null,
+      }))
+    );
+
+    const messages = (messagesRes.data ?? []).map((row: any) => ({
+      id: row.id,
+      subject:
+        row.subject ||
+        (row.message ? row.message.slice(0, 60) : "") ||
+        (row.body ? row.body.slice(0, 60) : "") ||
+        "Message",
+      body: row.body || row.message || "",
+      created_at: row.created_at,
+    }));
+
+    // FINAL PAYLOAD (structure unchanged)
+    return NextResponse.json({
       kpis,
       spendByCategory,
       supplierPerformance,
@@ -320,14 +298,9 @@ export async function GET(request: Request) {
       approvals,
       notifications,
       messages,
-    };
-
-    return NextResponse.json(payload);
+    });
   } catch (err: any) {
     console.error("Dashboard API fatal error:", err);
-    return NextResponse.json(
-      { error: "Failed to load dashboard", details: err?.message || String(err) },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to load dashboard", details: err.message }, { status: 500 });
   }
 }

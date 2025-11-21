@@ -290,6 +290,7 @@ export default function HomePage() {
         .section-header h2 {
           font-size: 28px;
           margin: 0 0 10px;
+          color:white;
         }
 
         .section-header p {
@@ -348,6 +349,7 @@ export default function HomePage() {
           grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
           gap: 20px;
           margin-top: 18px;
+          
         }
 
         .module-card {
@@ -579,16 +581,8 @@ export default function HomePage() {
                 Modern procurement teams need a unified, digital-first platform that connects requisitions, sourcing, auctions, suppliers, and approvals into one seamless experience.
               </p>
             </div>
-
             <div className="about-layout">
               <div className="about-text">
-                <p>
-                  For nearly two decades, Briskon has been helping global enterprises modernize procurement ecosystems. Our platform unifies requisitions, RFQs, reverse auctions, supplier onboarding, approvals, and contracts into a single digital workflow.
-                </p>
-                <p>
-                  Designed for scalability and flexibility, it enables teams to collaborate in real-time, reduce sourcing cycles, and achieve measurable cost savings with enhanced spend visibility and supplier performance.
-                </p>
-
                 <div className="about-bullets">
                   <div className="about-bullet">
                     <CheckCircleIcon className="about-bullet-icon" />
