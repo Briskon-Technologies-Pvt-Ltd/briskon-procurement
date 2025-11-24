@@ -204,7 +204,7 @@ export async function GET(req: Request) {
     // ======================================================
     const { data: rfqs, error } = await supabase
       .from("rfqs")
-      .select("id, title, organization_id, status, visibility, currency, created_at, requisition_id")
+      .select("id, title, organization_id, status, visibility, currency, created_at, end_at, requisition_id")
       .order("created_at", { ascending: false });
 
     if (error) throw error;

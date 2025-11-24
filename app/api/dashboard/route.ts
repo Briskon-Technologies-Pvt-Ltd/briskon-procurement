@@ -4,20 +4,15 @@ import { createClient } from "@supabase/supabase-js";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
 const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
-
 type AnyRecord = Record<string, any>;
-
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-
   const organizationId =
     searchParams.get("org_id") ||
     searchParams.get("organization_id") ||
     searchParams.get("organizationId") ||
     null;
-
   const applyOrgFilter = (query: any, column = "organization_id") => {
     if (organizationId) return query.eq(column, organizationId);
     return query;
@@ -71,13 +66,10 @@ export async function GET(request: Request) {
     const auctionsPromise = applyOrgFilter(supabase.from("auctions").select("id", { count: "exact" }));
     const suppliersPromise = applyOrgFilter(supabase.from("suppliers").select("id", { count: "exact" }), "org_onboarded_to");
     const awardsPromise = applyOrgFilter(supabase.from("awards").select("id", { count: "exact" }));
-
-    // Spend
+  // Spend
     const spendPromise = applyOrgFilter(supabase.from("requisitions").select("cost_center, estimated_value"));
-
     // Awards per month
     const awardsForPerfPromise = applyOrgFilter(supabase.from("awards").select("id, awarded_at"));
-
     // Cards Data
     const auctionsListPromise = applyOrgFilter(
       supabase
@@ -150,13 +142,12 @@ export async function GET(request: Request) {
         .limit(10),
       "recipient_profile_id"
     );
-
-    const messagesPromise = supabase
-      .from("messages")
-      .select("id, subject, message, body, created_at")
-      .order("created_at", { ascending: false })
-      .limit(10);
-
+// Force raw query without organization filtering
+const messagesPromise = supabase
+  .from("messages")
+  .select("id, body, created_at")
+  .order("created_at", { ascending: false })
+  .limit(10);
     const [
       requisitionsRes,
       rfqsRes,
@@ -186,8 +177,7 @@ export async function GET(request: Request) {
       notificationsPromise,
       messagesPromise,
     ]);
-
-    // KPIs JSON (unchanged)
+    // KPIs JSON 
     const kpis = {
       totalRequisitions: requisitionsRes.count ?? 0,
       activeRfqs: rfqsRes.count ?? 0,
@@ -195,7 +185,6 @@ export async function GET(request: Request) {
       totalSuppliers: suppliersRes.count ?? 0,
       awardsIssued: awardsResCount.count ?? 0,
     };
-
     // Spend map
     const spendRows = (spendRes.data ?? []) as AnyRecord[];
     const spendMap = new Map<string, number>();
@@ -235,6 +224,7 @@ export async function GET(request: Request) {
     const proposals = (proposalsListRes.data ?? []).map((row: any) => ({
       id: row.id,
       rfq_ref: row.rfq?.id || row.rfq?.title || "RFQ",
+      rfq_name: row.rfq?.title || "Untitled RFQ",
       supplier_name: row.supplier?.company_name || "Supplier",
       status: row.status,
     }));
@@ -278,15 +268,11 @@ export async function GET(request: Request) {
 
     const messages = (messagesRes.data ?? []).map((row: any) => ({
       id: row.id,
-      subject:
-        row.subject ||
-        (row.message ? row.message.slice(0, 60) : "") ||
-        (row.body ? row.body.slice(0, 60) : "") ||
-        "Message",
-      body: row.body || row.message || "",
-      created_at: row.created_at,
+      subject: row.body.slice(0, 30) || "Message",
+      body: row.body,
+      created_at: row.created_at
     }));
-
+    
     // FINAL PAYLOAD (structure unchanged)
     return NextResponse.json({
       kpis,

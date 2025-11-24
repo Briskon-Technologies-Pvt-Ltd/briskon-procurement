@@ -237,28 +237,7 @@ export default function PurchaseOrdersPage() {
 
   return (
     <div className="admin-content">
-      {/* HEADER */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-semibold text-[#012b73] mb-1">
-            Purchase Orders
-          </h1>
-          <p className="text-sm text-gray-600">
-            Monitor, manage, and track all purchase orders created from awards.
-          </p>
-        </div>
-        <button
-          className="cta-btn primary flex items-center gap-2 px-4 py-2 rounded-lg"
-          onClick={() =>
-            alert(
-              "POs are currently created from Awards. Manual creation can be enabled in a future version."
-            )
-          }
-        >
-          <PlusCircle size={18} /> Create PO
-        </button>
-      </div>
-
+  
       {/* KPI CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-white p-4 rounded-lg shadow-md border border-gray-100">

@@ -37,11 +37,12 @@ export default function AdminTopbar() {
     { icon: ClipboardList, label: "Request for Quotations", breadcrumbLabel: "RFQs", path: "/admin/rfqs" },
     { icon: Gavel, label: "Auction Management", breadcrumbLabel: "Auctions", path: "/admin/auctions" },
     { icon: Trophy, label: "Awards Management", breadcrumbLabel: "Awards", path: "/admin/awards" },
-    { icon: FileCheck, label: "Purchase Order Management", breadcrumbLabel: "Orders", path: "/admin/purchase-orders" },
+    { icon: FileCheck, label: "Purchase Orders", breadcrumbLabel: "ALL PO's", path: "/admin/purchase-orders" },
     { icon: FileSignature, label: "Contract Management", breadcrumbLabel: "Contracts", path: "/admin/contracts" },
     { icon: Users, label: "Supplier Management", breadcrumbLabel: "Suppliers", path: "/admin/suppliers" },
     { icon: Users, label: "Create New Supplier", breadcrumbLabel: "New Supplier", path: "/admin/suppliers/new" },
     { icon: BarChart3, label: "Procurement Analytics", breadcrumbLabel: "Analytics", path: "/admin/analytics" },
+    { icon: BarChart3, label: "Departments and Cost-centers", breadcrumbLabel: "Settings", path: "/admin/settings" },
   ];
 
   /* ===== Find icon + label for current route ===== */
@@ -122,12 +123,7 @@ export default function AdminTopbar() {
           
         </button>
 
-        <Link href="/admin/messages">
-          <button className="icon-btn" title="Messages">
-            <MessageSquare size={20} />
-          </button>
-        </Link>
-
+        
         <Link href="/admin/settings">
           <button className="icon-btn" title="Settings">
             <Settings size={20} />

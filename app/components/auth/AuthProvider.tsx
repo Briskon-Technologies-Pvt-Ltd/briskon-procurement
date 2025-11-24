@@ -15,7 +15,7 @@ import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
    User Profile Type (Enhanced)
 -------------------------------------------- */
 export type UserProfile = {
-  id: string;                          // ← add profile id
+  id: string;                          
   user_id?: string;
   organization_id?: string | null;
   fname?: string;
@@ -49,6 +49,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+
+  /* Flag to avoid repeated signOut attempts */
+  const [signingOut, setSigningOut] = useState(false);
 
   /* --------------------------------------------
      Load Session on Init
@@ -92,14 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.log("🚪 Logged out");
           setUser(null);
           setProfile(null);
-          const path = window.location.pathname;
-          if (
-            path.startsWith("/admin") ||
-            path.startsWith("/buyer") ||
-            path.startsWith("/supplier")
-          ) {
-            router.push("/login");
-          }
+          router.replace("/login");
         }
       }
     );
@@ -132,7 +128,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email: user?.email || "",
         role:
           data?.metadata?.role ||
-          (data.organization_id ? "admin" : "supplier"), // default logic
+          (data.organization_id ? "admin" : "supplier"),
         avatar_url: data.avatar_url || null,
         metadata: data.metadata || {},
       });
@@ -142,14 +138,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   /* --------------------------------------------
-     Logout Function
+     Logout Function (fixed for race condition)
   -------------------------------------------- */
   const signOut = async () => {
+    if (signingOut) return; // prevents double-click issues
+    setSigningOut(true);
+
     console.log("🚪 Signing out...");
     await supabase.auth.signOut();
-    setUser(null);
-    setProfile(null);
-    router.push("/login");
+
+    // Do NOT push /login here, listener handles redirect safely
   };
 
   /* --------------------------------------------

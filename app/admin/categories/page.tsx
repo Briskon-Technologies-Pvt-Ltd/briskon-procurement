@@ -226,16 +226,11 @@ export default function CategoriesPage() {
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-[#012b73] mb-1 flex items-center gap-2">
-            <Grid size={22} /> Category Management
-          </h1>
-          <p className="text-sm text-gray-600">
-            Manage nested categories, suppliers, and procurement data hierarchically.
-          </p>
+           
         </div>
         <button
           onClick={() => (window.location.href = "/admin/categories/new")}
-          className="cta-btn primary flex items-center gap-2 px-4 py-2 rounded-lg"
+          className="cta-btn primary flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer"
         >
           <PlusCircle size={18} /> Add Category
         </button>
@@ -255,7 +250,7 @@ export default function CategoriesPage() {
 
       {/* CHARTS */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow p-4 border border-gray-100">
+        <div className="bg-white rounded-lg shadow p-4 border border-blue-200">
           <h3 className="font-semibold text-[#012b73] mb-3 flex items-center gap-2">
             <FileText size={16} /> Category Spend Distribution
           </h3>
@@ -271,7 +266,7 @@ export default function CategoriesPage() {
           </ResponsiveContainer>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-4 border border-gray-100">
+        <div className="bg-white rounded-lg shadow p-4 border border-blue-200">
           <h3 className="font-semibold text-[#012b73] mb-3 flex items-center gap-2">
             <Users size={16} /> Category Utilization Metrics
           </h3>
@@ -295,56 +290,47 @@ export default function CategoriesPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-5 mb-8">
           {filtered.map((cat) => (
+            
             <div
-              key={cat.id}
-              className="bg-white border border-gray-100 rounded-lg p-5 shadow-sm hover:shadow-lg transition"
-            >
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <h3 className="font-semibold text-[#012b73] text-lg mb-1">
-                    {cat.name}
-                  </h3>
-                  <p className="text-xs text-gray-500">
-                    Manager: <b>{cat.manager || "Unassigned"}</b>
-                  </p>
-                </div>
-                <div className="flex gap-3 text-sm">
-                  <button
-                    onClick={() => openEditModal(cat)}
-                    className="text-blue-600 hover:underline flex items-center gap-1"
-                  >
-                    <Edit size={13} /> Edit
-                  </button>
-                  <button
-                    onClick={() => confirmDelete(cat)}
-                    className="text-red-600 hover:underline flex items-center gap-1"
-                  >
-                    <Trash2 size={13} /> Delete
-                  </button>
-                </div>
+            key={cat.id}
+            className="bg-white border border-blue-200 rounded-lg p-5 shadow-sm hover:shadow-lg transition flex flex-col"
+            style={{ minHeight: "260px" }}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h3 className="font-semibold text-[#012b73] text-lg mb-1">{cat.name}</h3>
+                <p className="text-xs text-gray-500">
+                  Manager: <b>{cat.manager || "Unassigned"}</b>
+                </p>
               </div>
-
-              <div className="text-sm text-gray-600 mb-3">
-                <FolderTree size={14} className="inline mr-1" />
-                Subcategories:
-              </div>
-              {renderSubcategories(cat.children)}
-
-              <div className="flex justify-between text-xs mt-3 pt-2 border-t border-gray-200">
-                <div className="flex items-center gap-1">
-                  <FileText size={12} className="text-gray-500" />
-                  RFQs: <b>{Math.floor(Math.random() * 10) + 1}</b>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Gavel size={12} className="text-gray-500" />
-                  Auctions: <b>{Math.floor(Math.random() * 5) + 1}</b>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Users size={12} className="text-gray-500" />
-                  Suppliers: <b>{Math.floor(Math.random() * 8) + 1}</b>
-                </div>
+          
+              <div className="flex gap-3 text-sm">
+                <button onClick={() => openEditModal(cat)} className="text-blue-600 hover:underline flex items-center gap-1">
+                  <Edit size={13} /> Edit
+                </button>
+                <button onClick={() => confirmDelete(cat)} className="text-red-600 hover:underline flex items-center gap-1">
+                  <Trash2 size={13} /> Delete
+                </button>
               </div>
             </div>
+          
+            <div className="flex-1">
+              <div className="text-sm text-gray-600 mb-3">
+                <FolderTree size={14} className="inline mr-1" /> Subcategories:
+              </div>
+              {renderSubcategories(cat.children)}
+            </div>
+          
+            <div className="border-t border-gray-200 pt-3 mt-auto">
+              <div className="flex justify-between text-xs text-gray-700">
+                <div className="flex items-center gap-1"><FileText size={12} className="text-gray-500" /> RFQs: <b>{Math.floor(Math.random() * 10) + 1}</b></div>
+                <div className="flex items-center gap-1"><Gavel size={12} className="text-gray-500" /> Auctions: <b>{Math.floor(Math.random() * 5) + 1}</b></div>
+                <div className="flex items-center gap-1"><Users size={12} className="text-gray-500" /> Suppliers: <b>{Math.floor(Math.random() * 8) + 1}</b></div>
+              </div>
+            </div>
+          </div>
+          
+
           ))}
         </div>
       )}

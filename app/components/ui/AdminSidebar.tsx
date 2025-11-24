@@ -34,7 +34,7 @@ export default function AdminSidebar() {
    // { icon: Shield, label: "Roles & Access", path: "/admin/roles-access" },
    // { icon: ListChecks, label: "Approval Templates", path: "/admin/approval-templates" },
    //{ icon: History, label: "Approval History", path: "/admin/approval-history" },
-    { icon: BarChart3, label: "Analytics", path: "/admin/analytics" },
+   // { icon: BarChart3, label: "Analytics", path: "/admin/analytics" },
   ];
 
   const handleNavigation = (path: string) => {

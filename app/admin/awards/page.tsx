@@ -89,16 +89,7 @@ export default function AwardsPage() {
   // ---------------- UI ----------------
   return (
     <div className="p-6 space-y-6">
-      {/* HEADER */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
-        <div>
-          <h1 className="text-2xl font-bold text-[#012b73]">Awards Management</h1>
-          <p className="text-sm text-gray-600">
-            Track awarded suppliers, issued awards, pending POs, and completed contracts.
-          </p>
-        </div>
-      </div>
-
+     
       {/* KPI CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white border p-4 rounded-lg shadow-md">
