@@ -67,7 +67,15 @@ export async function GET(request: Request) {
     const suppliersPromise = applyOrgFilter(supabase.from("suppliers").select("id", { count: "exact" }), "org_onboarded_to");
     const awardsPromise = applyOrgFilter(supabase.from("awards").select("id", { count: "exact" }));
   // Spend
-    const spendPromise = applyOrgFilter(supabase.from("requisitions").select("cost_center, estimated_value"));
+
+  const spendPromise = applyOrgFilter(
+    supabase
+      .from("requisitions")
+      .select(`
+        estimated_value,
+        category:categories!requisitions_category_id_fkey ( name )
+      `)
+  );
     // Awards per month
     const awardsForPerfPromise = applyOrgFilter(supabase.from("awards").select("id, awarded_at"));
     // Cards Data
@@ -186,17 +194,22 @@ const messagesPromise = supabase
       awardsIssued: awardsResCount.count ?? 0,
     };
     // Spend map
+
     const spendRows = (spendRes.data ?? []) as AnyRecord[];
-    const spendMap = new Map<string, number>();
-    for (const row of spendRows) {
-      const key = row.cost_center || "Unclassified";
-      const value = Number(row.estimated_value || 0);
-      spendMap.set(key, (spendMap.get(key) || 0) + value);
-    }
-    const spendByCategory = Array.from(spendMap.entries())
-      .map(([category, total]) => ({ category, total }))
-      .sort((a, b) => b.total - a.total)
-      .slice(0, 6);
+
+const spendMap = new Map<string, number>();
+
+for (const row of spendRows) {
+  const key = row.category?.name || "Uncategorized";
+  const value = Number(row.estimated_value || 0);
+  spendMap.set(key, (spendMap.get(key) || 0) + value);
+}
+
+const spendByCategory = Array.from(spendMap.entries())
+  .map(([category, total]) => ({ category, total }))
+  .sort((a, b) => b.total - a.total)
+  .slice(0, 6);
+
 
     // Awards performance
     const perfRows = (awardsForPerfRes.data ?? []) as AnyRecord[];

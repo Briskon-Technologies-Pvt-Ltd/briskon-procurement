@@ -1,17 +1,24 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from "react";
-import Link from "next/link";
+import React, {
+  useEffect,
+  useState,
+  useMemo,
+  useRef,
+  Fragment,
+} from "react";
+import { useRouter } from "next/navigation";
 import {
-  Plus,
   Search,
   Filter,
-  FileSpreadsheet,
+  Users,
+  ChevronDown,
+  ChevronUp,
   CheckCircle,
-  XCircle,
   Rocket,
   Clock,
-  Users,
+  XCircle,
+  FileSpreadsheet,
 } from "lucide-react";
 import {
   PieChart,
@@ -36,6 +43,8 @@ function deriveStatus(a: any) {
 
   if (a.status === "draft") return "draft";
   if (a.status === "archived") return "archived";
+  // Treat awarded as completed/closed in UI
+  if (a.status === "awarded") return "completed";
 
   if (a.status === "published" && !isNaN(start) && !isNaN(end)) {
     if (start > now) return "scheduled";
@@ -55,36 +64,23 @@ const COLORS = ["#E0ECFF", "#82B1FF", "#2F6EFB", "#012B73"];
 /* ============================================================
    MAIN COMPONENT
 ============================================================ */
-export default function AuctionDashboard() {
-  const [auctions, setAuctions] = useState<any[]>([]);
-  const [filtered, setFiltered] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function AuctionsPage() {
+  const router = useRouter();
 
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [typeFilter, setTypeFilter] = useState("all");
+  const [auctions, setAuctions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
-  // Create Auction (RFQ selection) modal
-  const [showModal, setShowModal] = useState(false);
-  const [rfqs, setRfqs] = useState<any[]>([]);
-  const [rfqLoading, setRfqLoading] = useState(false);
+  const liveRef = useRef<HTMLDivElement | null>(null);
+  const upcomingRef = useRef<HTMLDivElement | null>(null);
+  const closedRef = useRef<HTMLDivElement | null>(null);
 
-  // Bid leaderboard modal
-  const [showBidsModal, setShowBidsModal] = useState(false);
-  const [selectedAuction, setSelectedAuction] = useState<any>(null);
-  const [leaderboard, setLeaderboard] = useState<any[]>([]);
-  const [bidLoading, setBidLoading] = useState(false);
-
-  /* ---------------------------------------------------------
-     LOAD AUCTIONS
-  --------------------------------------------------------- */
   const loadAuctions = async () => {
     try {
       setLoading(true);
       const res = await fetch("/api/auctions?t=" + Date.now());
       const json = await res.json();
       setAuctions(json.auctions || []);
-      setFiltered(json.auctions || []);
     } catch (e) {
       console.error("Auction load error", e);
     } finally {
@@ -97,95 +93,26 @@ export default function AuctionDashboard() {
   }, []);
 
   /* ---------------------------------------------------------
-     LOAD RFQS (for Create Auction modal) - only DRAFT
-  --------------------------------------------------------- */
-  const loadRFQs = async () => {
-    try {
-      setRfqLoading(true);
-      const res = await fetch("/api/rfqs?t=" + Date.now());
-      const json = await res.json();
-
-      if (json.success) {
-        const rows: any[] = json.rfqs || json.data || [];
-        const drafts = rows.filter((r: any) => r.status === "draft");
-        setRfqs(drafts);
-      }
-    } catch (err) {
-      console.error("RFQ load error", err);
-    } finally {
-      setRfqLoading(false);
-    }
-  };
-
-  /* ---------------------------------------------------------
-     LOAD LEADERBOARD (SUPPLIER TOTALS)
-  --------------------------------------------------------- */
-  const loadLeaderboard = async (auctionId: string) => {
-    try {
-      setBidLoading(true);
-
-      const res = await fetch(`/api/bids/leaderboard?auction_id=${auctionId}`);
-      const json = await res.json();
-
-      if (json.success) {
-        setLeaderboard(
-          (json.leaderboard || []).map((t: any, idx: number) => ({
-            rank: idx + 1,
-            supplier_id: t.supplier_id,
-            supplier_name: t.supplier_name,
-            total: t.total,
-            expanded: false,
-            items: [] as any[],
-          }))
-        );
-        setShowBidsModal(true);
-        setSelectedAuction((prev: any) =>
-          prev && prev.id === auctionId ? prev : auctions.find((a: any) => a.id === auctionId)
-        );
-      }
-    } catch (err: any) {
-      console.error("Leaderboard load error", err.message);
-    } finally {
-      setBidLoading(false);
-    }
-  };
-
-  /* ---------------------------------------------------------
-     LOAD ITEM-LEVEL DETAILS FOR A SUPPLIER IN AN AUCTION
-     Uses /api/bids/items?auction_id=...&supplier_id=...
-  --------------------------------------------------------- */
-  const loadItemDetails = async (auctionId: string, supplierId: string) => {
-    try {
-      const res = await fetch(
-        `/api/bids/items?auction_id=${auctionId}&supplier_id=${supplierId}`
-      );
-      const json = await res.json();
-
-      if (json.success) {
-        setLeaderboard((prev) =>
-          prev.map((l: any) =>
-            l.supplier_id === supplierId ? { ...l, items: json.items || [] } : l
-          )
-        );
-      }
-    } catch (err) {
-      console.error("Error loading line items:", err);
-    }
-  };
-
-  /* ---------------------------------------------------------
      FILTERED LIST
   --------------------------------------------------------- */
-  useEffect(() => {
+  const filteredAuctions = useMemo(() => {
     let data = [...auctions];
-    if (statusFilter !== "all") data = data.filter((a) => deriveStatus(a) === statusFilter);
-    if (typeFilter !== "all") data = data.filter((a) => a.auction_type === typeFilter);
     if (search.trim()) {
       const q = search.toLowerCase();
       data = data.filter((a) => getAuctionTitle(a).toLowerCase().includes(q));
     }
-    setFiltered(data);
-  }, [statusFilter, typeFilter, search, auctions]);
+    return data;
+  }, [auctions, search]);
+
+  const liveAuctions = filteredAuctions.filter(
+    (a) => deriveStatus(a) === "running"
+  );
+  const upcomingAuctions = filteredAuctions.filter(
+    (a) => deriveStatus(a) === "scheduled"
+  );
+  const closedAuctions = filteredAuctions.filter(
+    (a) => deriveStatus(a) === "completed"
+  );
 
   /* ---------------------------------------------------------
      SUMMARY / KPI DATA
@@ -212,7 +139,10 @@ export default function AuctionDashboard() {
   const trendData = useMemo(() => {
     const grouped: Record<string, number> = {};
     auctions.forEach((a) => {
-      const m = new Date(a.created_at).toLocaleString("default", { month: "short" });
+      if (!a.created_at) return;
+      const m = new Date(a.created_at).toLocaleString("default", {
+        month: "short",
+      });
       grouped[m] = (grouped[m] || 0) + 1;
     });
     return Object.entries(grouped).map(([month, count]) => ({ month, count }));
@@ -222,38 +152,49 @@ export default function AuctionDashboard() {
      RENDER
   ============================================================ */
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      {/* HEADER BUTTON */}
-      <div className="flex justify-end items-center mb-6">
+    <div className="p-6 bg-gray-50 min-h-screen space-y-8">
+      {/* HEADER + CREATE BUTTON */}
+      <div className="flex justify-end items-center mb-4">
         <button
-          onClick={() => {
-            loadRFQs();
-            setShowModal(true);
-          }}
+          onClick={() => router.push("/admin/auctions/new")}
           className="flex items-center gap-2 px-4 py-2 bg-[#2f6efb] text-white rounded-lg hover:bg-[#1d4fcc] text-sm cursor-pointer transition"
         >
-          <Plus size={16} /> Create Auction
+          <FileSpreadsheet size={16} />
+          Create Auction
         </button>
       </div>
 
       {/* SUMMARY KPI ROW */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-5 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-5 mb-4">
         <SummaryCard label="Total" value={summary.total} icon={<FileSpreadsheet />} />
         <SummaryCard
           label="Draft"
           value={summary.drafts}
           icon={<Clock className="text-yellow-500" />}
         />
-        <SummaryCard label="Upcoming" value={summary.upcoming} icon={<Clock />} />
+        <SummaryCard
+          label="Upcoming"
+          value={summary.upcoming}
+          icon={<Clock />}
+          onClick={() =>
+            upcomingRef.current?.scrollIntoView({ behavior: "smooth" })
+          }
+        />
         <SummaryCard
           label="Live"
           value={summary.live}
           icon={<Rocket className="text-green-600" />}
+          onClick={() =>
+            liveRef.current?.scrollIntoView({ behavior: "smooth" })
+          }
         />
         <SummaryCard
           label="Completed"
           value={summary.completed}
           icon={<CheckCircle className="text-blue-600" />}
+          onClick={() =>
+            closedRef.current?.scrollIntoView({ behavior: "smooth" })
+          }
         />
         <SummaryCard
           label="Archived"
@@ -263,9 +204,11 @@ export default function AuctionDashboard() {
       </div>
 
       {/* CHARTS ROW */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <div className="bg-white border border-blue-200 rounded-xl shadow p-4">
-          <h2 className="text-lg font-semibold text-gray-600 mb-3">Auctions by Status</h2>
+          <h2 className="text-lg font-semibold text-gray-600 mb-3">
+            Auctions by status
+          </h2>
           <ResponsiveContainer width="100%" height={240}>
             <PieChart>
               <Pie data={pieData} dataKey="value" outerRadius={80} label>
@@ -279,54 +222,32 @@ export default function AuctionDashboard() {
         </div>
 
         <div className="bg-white border border-blue-200 rounded-xl shadow p-4">
-          <h2 className="text-lg font-semibold text-gray-600 mb-3">Auction Creation Trend</h2>
+          <h2 className="text-lg font-semibold text-gray-600 mb-3">
+            Auction creation trend
+          </h2>
           <ResponsiveContainer width="100%" height={240}>
             <LineChart data={trendData}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" />
               <YAxis allowDecimals={false} />
               <Tooltip />
-              <Line type="monotone" dataKey="count" stroke="#2563eb" strokeWidth={2} />
+              <Line
+                type="monotone"
+                dataKey="count"
+                stroke="#2563eb"
+                strokeWidth={2}
+              />
             </LineChart>
           </ResponsiveContainer>
         </div>
       </div>
 
-      <div className="mb-6">
-  <div className="flex items-center">
-    <h2 className="text-lg font-semibold text-gray-600">AUCTION DETAILS</h2>
-  </div>
-  <div className="w-full h-px bg-blue-200 mt-2"></div>
-</div>
-
-      {/* FILTERS */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-2">
+      {/* SEARCH */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2 text-sm text-gray-500">
           <Filter size={16} className="text-gray-400" />
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="border rounded-md px-3 py-2 text-sm"
-          >
-            <option value="all">All Status</option>
-            <option value="draft">Draft</option>
-            <option value="scheduled">Upcoming</option>
-            <option value="running">Live</option>
-            <option value="completed">Completed</option>
-            <option value="archived">Archived</option>
-          </select>
-          <select
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
-            className="border rounded-md px-3 py-2 text-sm"
-          >
-            <option value="all">All Types</option>
-            <option value="standard_reverse">Standard</option>
-            <option value="ranked_reverse">Ranked</option>
-            <option value="sealed_bid">Sealed</option>
-          </select>
+          <span>Search across all auctions</span>
         </div>
-
         <div className="flex items-center gap-2 w-1/3">
           <Search className="w-5 h-5 text-gray-400" />
           <input
@@ -339,203 +260,29 @@ export default function AuctionDashboard() {
         </div>
       </div>
 
-      {/* AUCTION CARDS */}
-      {loading ? (
-        <div className="text-gray-500 text-sm">Loading auctions...</div>
-      ) : filtered.length === 0 ? (
-        <div className="text-gray-500 text-sm">No auctions found.</div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-          {filtered.map((a) => (
-            <AuctionCard
-              key={a.id}
-              auction={a}
-              onShowBids={() => {
-                loadLeaderboard(a.id);
-                setSelectedAuction(a);
-              }}
-            />
-          ))}
-        </div>
+      {loading && (
+        <div className="text-gray-500 text-sm mb-2">Loading auctions...</div>
       )}
 
-      {/* ======================= CREATE AUCTION (RFQ SELECT MODAL) ======================= */}
-      {showModal && (
-        <div
-          className="fixed inset-0 z-50 bg-black/40 flex justify-center items-center p-4"
-          onClick={() => setShowModal(false)}
-        >
-          <div
-            className="bg-white rounded-xl shadow-xl p-6 w-full max-w-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold">Select RFQ to Convert into Auction</h2>
-              <button
-                className="text-gray-500 hover:text-red-600 text-xl font-bold"
-                onClick={() => setShowModal(false)}
-              >
-                ✕
-              </button>
-            </div>
+      {/* LIVE AUCTIONS SECTION */}
+      <SectionHeader title="LIVE AUCTIONS" refObj={liveRef} />
+      <AuctionTable data={liveAuctions} type="live" />
 
-            {rfqLoading ? (
-              <p className="text-sm text-gray-600">Loading RFQs...</p>
-            ) : rfqs.length === 0 ? (
-              <p className="text-sm text-gray-600">No draft RFQs available to convert.</p>
-            ) : (
-              <table className="w-full text-sm">
-                <thead className="bg-gray-100 text-gray-600 text-xs uppercase">
-                  <tr>
-                    <th className="p-2 text-left">Title</th>
-                    <th className="p-2 text-center">Items</th>
-                    <th className="p-2 text-center">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rfqs.map((r: any) => (
-                    <tr key={r.id} className="border-b hover:bg-gray-50">
-                      <td className="p-2">{r.title}</td>
-                      <td className="p-2 text-center">{r.items_count ?? 0}</td>
-                      <td className="p-2 text-center">
-                        <button
-                          className="text-blue-600 hover:text-blue-800 text-xs font-medium"
-                          onClick={() =>
-                            (window.location.href = `/admin/auctions/new?from_rfq=${r.id}`)
-                          }
-                        >
-                          Convert
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-        </div>
-      )}
+      {/* UPCOMING AUCTIONS SECTION */}
+      <SectionHeader title="UPCOMING AUCTIONS" refObj={upcomingRef} />
+      <AuctionTable data={upcomingAuctions} type="upcoming" />
 
-      {/* ======================= BID LEADERBOARD MODAL ======================= */}
-      {showBidsModal && selectedAuction && (
-        <div
-          className="fixed inset-0 z-50 bg-black/40 flex justify-center items-center p-4"
-          onClick={() => setShowBidsModal(false)}
-        >
-          <div
-            className="bg-white rounded-xl shadow-xl p-6 w-full max-w-3xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="flex justify-between items-center mb-4 ">
-              <h2 className="text-xl font-semibold">
-                Supplier Leaderboard: {getAuctionTitle(selectedAuction)}
-              </h2>
-
-              <button
-                className="text-gray-500 hover:text-red-600 text-xl font-bold"
-                onClick={() => setShowBidsModal(false)}
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Table */}
-            {bidLoading ? (
-              <p className="text-sm text-gray-600">Loading...</p>
-            ) : leaderboard.length === 0 ? (
-              <p className="text-sm text-gray-600">No bids submitted yet.</p>
-            ) : (
-              <table className="w-full text-sm">
-                <thead className="bg-blue-500 text-white text-sm uppercase">
-                  <tr>
-                    <th className="p-2 text-left">Rank</th>
-                    <th className="p-2 text-left">Supplier</th>
-                    <th className="p-2 text-right">Total Bid</th>
-                    <th className="p-2 text-center">Items</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {leaderboard.map((l: any, index: number) => {
-                    const key = `${selectedAuction.id}_${l.supplier_id}_${index}`;
-
-                    return (
-                      <React.Fragment key={key}>
-                        <tr className="border-b">
-                          <td className="p-2 text-xl font-semibold ">{l.rank}</td>
-                          <td className="p-2 font-semibold">{l.supplier_name || "N/A"}</td>
-                          <td className="p-2 text-right font-semibold text-blue-600">
-                            {l.total?.toLocaleString()}
-                          </td>
-                          <td className="p-2 text-center">
-                            <button
-                              className="text-blue-600 hover:text-blue-800 text-xs font-medium"
-                              onClick={() => {
-                                if (!l.items || l.items.length === 0) {
-                                  loadItemDetails(selectedAuction.id, l.supplier_id);
-                                }
-
-                                setLeaderboard((prev) =>
-                                  prev.map((x: any, i: number) =>
-                                    i === index ? { ...x, expanded: !x.expanded } : x
-                                  )
-                                );
-                              }}
-                            >
-                              {l.expanded ? "Hide" : "View"}
-                            </button>
-                          </td>
-                        </tr>
-
-                        {l.expanded && (l.items || []).length > 0 && (
-                          <tr className="bg-gray-200 border-b">
-                            <td colSpan={4} className="p-3">
-                              <table className="w-full text-xs">
-                                <thead className="bg-blue-200 text-gray-700">
-                                  <tr>
-                                    <th className="p-2 text-left">Item</th>
-                                    <th className="p-2 text-center">Qty</th>
-                                    <th className="p-2 text-center">Unit Price</th>
-                                    <th className="p-2 text-center">Total</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {(l.items || []).map((i: any, idx: number) => (
-                                    <tr key={`${key}_${idx}`} className="border-b">
-                                      <td className="p-2">{i.item_name}</td>
-                                      <td className="p-2 text-center">{i.qty}</td>
-                                      <td className="p-2 text-center">
-                                        {i.unit_price?.toLocaleString()}
-                                      </td>
-                                      <td className="p-2 text-center font-semibold">
-                                        {i.total?.toLocaleString()}
-                                      </td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </td>
-                          </tr>
-                        )}
-                      </React.Fragment>
-                    );
-                  })}
-                </tbody>
-              </table>
-            )}
-
-            {/* Footer */}
-            <div className="flex justify-end mt-4">
-              <button
-                onClick={() => setShowBidsModal(false)}
-                className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded text-sm cursor-pointer"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* CLOSED / COMPLETED AUCTIONS SECTION */}
+      <SectionHeader title="CLOSED / COMPLETED AUCTIONS" refObj={closedRef} />
+      <AuctionTable
+        data={closedAuctions}
+        type="closed"
+        onAward={(id: string, alreadyAwarded: boolean) => {
+          if (alreadyAwarded) return;
+          // go to award creation screen
+          router.push(`/admin/awards/new?auction_id=${id}`);
+        }}
+      />
     </div>
   );
 }
@@ -543,8 +290,24 @@ export default function AuctionDashboard() {
 /* ============================================================
    CHILD COMPONENTS
 ============================================================ */
-const SummaryCard = ({ label, value, icon }: any) => (
-  <div className="bg-white rounded-xl shadow p-5 border border-blue-200 hover:border-blue-500">
+
+const SummaryCard = ({
+  label,
+  value,
+  icon,
+  onClick,
+}: {
+  label: string;
+  value: number;
+  icon: React.ReactNode;
+  onClick?: () => void;
+}) => (
+  <div
+    onClick={onClick}
+    className={`bg-white rounded-xl shadow p-5 border border-blue-200 ${
+      onClick ? "hover:border-blue-500 cursor-pointer" : ""
+    }`}
+  >
     <div className="flex items-center justify-between mb-2">
       <span className="text-gray-500 text-sm">{label}</span>
       {icon}
@@ -553,89 +316,377 @@ const SummaryCard = ({ label, value, icon }: any) => (
   </div>
 );
 
-const AuctionCard = ({ auction, onShowBids }: any) => {
-  const [bidCount, setBidCount] = useState(0);
-  const status = deriveStatus(auction);
+const SectionHeader = ({
+  title,
+  refObj,
+}: {
+  title: string;
+  refObj: React.RefObject<HTMLDivElement | null>;
+}) => (
+  <div ref={refObj as any} className="mb-3 mt-10">
+    <h2 className="text-lg font-semibold text-gray-700">{title}</h2>
+    <div className="w-full h-px bg-blue-200 mt-2"></div>
+  </div>
+);
+
+const BidCountCell = ({
+  auctionId,
+  shouldLoad,
+}: {
+  auctionId: string;
+  shouldLoad: boolean;
+}) => {
+  const [count, setCount] = useState<number | null>(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (status === "running" || status === "completed") {
-      fetch(`/api/bids?auction_id=${auction.id}&count_only=1`)
-        .then((r) => r.json())
-        .then((res) => res.success && setBidCount(res.count))
-        .catch(() => {});
+    if (!shouldLoad) return;
+
+    let cancelled = false;
+
+    const loadCount = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch(
+          `/api/bids?auction_id=${auctionId}&count_only=1`
+        );
+        const json = await res.json();
+        if (!cancelled && json.success) {
+          setCount(json.count ?? 0);
+        }
+      } catch (err) {
+        console.error("Bid count error:", err);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    loadCount();
+    return () => {
+      cancelled = true;
+    };
+  }, [auctionId, shouldLoad]);
+
+  if (!shouldLoad) {
+    return <span>-</span>;
+  }
+
+  if (loading && count === null) {
+    return <span className="text-xs text-gray-400">...</span>;
+  }
+
+  return <span>{count ?? 0}</span>;
+};
+
+const AuctionTable = ({
+  data,
+  type,
+  onAward,
+}: {
+  data: any[];
+  type: "live" | "upcoming" | "closed";
+  onAward?: (id: string, alreadyAwarded: boolean) => void;
+}) => {
+  // Leaderboard state only needed for LIVE
+  const [leaderboards, setLeaderboards] = useState<
+    Record<
+      string,
+      {
+        open: boolean;
+        rows: {
+          rank: number;
+          supplier_id: string;
+          supplier_name: string;
+          total: number;
+          expanded?: boolean;
+          items?: any[];
+        }[];
+      }
+    >
+  >({});
+
+  const handleToggleLeaderboard = async (auctionId: string) => {
+    const existing = leaderboards[auctionId];
+    if (existing) {
+      // just toggle open/close
+      setLeaderboards((prev) => ({
+        ...prev,
+        [auctionId]: { ...existing, open: !existing.open },
+      }));
+      return;
     }
-  }, [auction.id, status]);
 
-  const statusColorMap: any = {
-    running: "bg-green-500 text-white",
-    scheduled: "bg-blue-500 text-white",
-    completed: "bg-gray-500 text-white",
-    draft: "bg-yellow-500 text-white",
-    archived: "bg-red-500 text-white",
-    unknown: "bg-gray-500 text-white",
+    try {
+      const res = await fetch(`/api/bids/leaderboard?auction_id=${auctionId}`);
+      const json = await res.json();
+
+      if (json.success) {
+        const rows = (json.leaderboard || []).map((t: any, idx: number) => ({
+          rank: idx + 1,
+          supplier_id: t.supplier_id,
+          supplier_name: t.supplier_name,
+          total: t.total,
+          expanded: false,
+          items: [],
+        }));
+
+        setLeaderboards((prev) => ({
+          ...prev,
+          [auctionId]: { open: true, rows },
+        }));
+      }
+    } catch (err: any) {
+      console.error("Leaderboard load error:", err.message);
+    }
   };
 
-  const typeMap: any = {
-    standard_reverse: "bg-blue-600 text-white",
-    ranked_reverse: "bg-purple-600 text-white",
-    sealed_bid: "bg-gray-700 text-white",
-  };
+  const handleLoadItems = async (auctionId: string, supplierId: string) => {
+    try {
+      const res = await fetch(
+        `/api/bids/items?auction_id=${auctionId}&supplier_id=${supplierId}`
+      );
+      const json = await res.json();
 
-  const typeLabel =
-    auction.auction_type === "standard_reverse"
-      ? "Standard Reverse"
-      : auction.auction_type === "ranked_reverse"
-      ? "Ranked Reverse"
-      : "Sealed Reverse";
+      if (json.success) {
+        setLeaderboards((prev) => {
+          const state = prev[auctionId];
+          if (!state) return prev;
+          const newRows = state.rows.map((row) =>
+            row.supplier_id === supplierId
+              ? { ...row, items: json.items || [] }
+              : row
+          );
+          return {
+            ...prev,
+            [auctionId]: { ...state, rows: newRows },
+          };
+        });
+      }
+    } catch (err) {
+      console.error("Error loading line items:", err);
+    }
+  };
 
   return (
-    <div
-      className="rounded shadow-sm border border-blue-200 hover:shadow-md hover:border-blue-500 transition p-5 relative cursor-pointer bg-white"
-      onClick={() => (window.location.href = `/admin/auctions/${auction.id}`)}
-    >
-      {/* STATUS pill - top left */}
-     <i>  <span
-        className={`absolute top-3 left-3 text-[11px] px-2 py-1 rounded-full shadow-sm ${
-          statusColorMap[status] || statusColorMap.unknown
-        }`}
-      >
-        {status}
-      </span> </i>
+    <div className="bg-white rounded-lg shadow-md border border-blue-200 p-4">
+      {data.length === 0 ? (
+        <div className="text-center text-gray-500 text-sm py-5">
+          No {type} auctions found
+        </div>
+      ) : (
+        <table className="w-full text-xs">
+          <thead className="bg-blue-100 text-black text-xs uppercase border-b border-blue-500">
+            <tr>
+              <th className="p-3 text-left">Auction Name </th>
+              <th className="p-3 text-left">Auction Type</th>
+              <th className="p-3 text-center">Start Date/Time</th>
+              <th className="p-3 text-center">End Date/Time</th>
+              <th className="p-3 text-center">Supplier Bids</th>
+              {type === "live" && (
+                <th className="p-3 text-center">Leaderboard</th>
+              )}
+              {type === "closed" && (
+                <th className="p-3 text-center">Award</th>
+              )}
+            </tr>
+          </thead>
+          <tbody>
+            {data.map((a: any) => {
+              const lbState = leaderboards[a.id];
+              const isAwarded = a.status === "awarded";
 
-      {/* TYPE pill - top right */}
-      <span
-        className={`absolute top-3 right-3 text-[11px] px-2 py-1 rounded-full shadow-sm ${
-          typeMap[auction.auction_type] || "bg-blue-600 text-white"
-        }`}
-      >
-        {typeLabel}
-      </span>
+              return (
+                <Fragment key={a.id}>
+                  <tr className="border-b border-gray-100 hover:bg-[#f5f7fb] transition">
+                    <td
+                      className="p-3 font-semibold text-[#012b73] cursor-pointer"
+                      onClick={() =>
+                        (window.location.href = `/admin/auctions/${a.id}`)
+                      }
+                    >
+                      {getAuctionTitle(a)}
+                    </td>
+                    <td className="p-3 text-gray-700">{a.auction_type}</td>
+                    <td className="p-3 text-center">
+                      {a.start_at
+                        ? new Date(a.start_at).toLocaleString()
+                        : "-"}
+                    </td>
+                    <td className="p-3 text-center">
+                      {a.end_at ? new Date(a.end_at).toLocaleString() : "-"}
+                    </td>
+                    <td className="p-3 text-center font-semibold text-green-500">
+                      <BidCountCell
+                        auctionId={a.id}
+                        shouldLoad={type === "live" || type === "closed"}
+                      />
+                    </td>
 
-      {/* CONTENT */}
-      <h3 className="text-lg font-semibold text-gray-900 mt-7 mb-1">
-        {getAuctionTitle(auction)}
-      </h3>
+                    {type === "live" && (
+                      <td className="p-3 text-center">
+                        <button
+                          className="text-blue-600 hover:text-blue-800 flex items-center gap-1 text-xs mx-auto"
+                          onClick={() => handleToggleLeaderboard(a.id)}
+                        >
+                          {lbState?.open ? (
+                            <ChevronUp size={16} />
+                          ) : (
+                            <ChevronDown size={16} />
+                          )}
+                          View
+                        </button>
+                      </td>
+                    )}
 
-      <p className="text-xs text-gray-600 mb-6">
-        <b>Duration:</b>{" "}
-        {auction.start_at ? new Date(auction.start_at).toLocaleString() : "No start date"} →{" "}
-        {auction.end_at ? new Date(auction.end_at).toLocaleString() : "No end date"}
-      </p>
-        &nbsp;
-      {/* SUPPLIER COUNT PILL - bottom right with icon */}
-      {(status === "running" || status === "completed") && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onShowBids();
-          }}
-          className="absolute bottom-3 right-3 inline-flex items-center gap-1 px-3 py-[6px] rounded-full bg-blue-50 text-blue-700 text-[11px] hover:bg-blue-100 cursor-pointer"
-        >
-          <Users size={14} />
-          <span>
-            <u>TOTAL SUPPLIER BIDS : {bidCount}</u>
-          </span>
-        </button>
+                    {type === "closed" && (
+                      <td className="p-3 text-center">
+                        {isAwarded ? (
+                          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-semibold">
+                            <CheckCircle size={14} />
+                            Awarded
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => onAward?.(a.id, isAwarded)}
+                            className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold"
+                          >
+                            Award
+                          </button>
+                        )}
+                      </td>
+                    )}
+                  </tr>
+
+                  {/* LIVE LEADERBOARD ROW */}
+                  {type === "live" && lbState?.open && (
+                    <tr className="bg-white border-b border-gray-100">
+                      <td colSpan={6} className="p-3">
+                        {lbState.rows.length === 0 ? (
+                          <div className="text-xs text-gray-500">
+                            No bids submitted yet.
+                          </div>
+                        ) : (
+                          <table className="w-full text-xs bg-blue-50 rounded">
+                            <thead className="bg-blue-200 text-gray-700">
+                              <tr>
+                                <th className="p-2 text-left">Rank</th>
+                                <th className="p-2 text-left">Supplier Name</th>
+                                <th className="p-2 text-right">Total bid Value</th>
+                                <th className="p-2 text-center">Items</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {lbState.rows.map((l, idx) => (
+                                <Fragment
+                                  key={`${a.id}_${l.supplier_id}_${idx}`}
+                                >
+                                  <tr className="border-b border-gray-200">
+                                    <td className="p-2 font-semibold">
+                                      {l.rank}
+                                    </td>
+                                    <td className="p-2">
+                                     <b> {l.supplier_name || "N/A"} </b>
+                                    </td>
+                                    <td className="p-2 text-right text-blue-600 font-semibold">
+                                      {l.total?.toLocaleString()}
+                                    </td>
+                                    <td className="p-2 text-center">
+                                      <button
+                                        className="text-blue-600 hover:text-blue-800 text-xs font-medium"
+                                        onClick={() => {
+                                          if (!l.items || !l.items.length) {
+                                            handleLoadItems(
+                                              a.id,
+                                              l.supplier_id
+                                            );
+                                          }
+                                          setLeaderboards((prev) => {
+                                            const state = prev[a.id];
+                                            if (!state) return prev;
+                                            const newRows = state.rows.map(
+                                              (row, i2) =>
+                                                i2 === idx
+                                                  ? {
+                                                      ...row,
+                                                      expanded: !row.expanded,
+                                                    }
+                                                  : row
+                                            );
+                                            return {
+                                              ...prev,
+                                              [a.id]: {
+                                                ...state,
+                                                rows: newRows,
+                                              },
+                                            };
+                                          });
+                                        }}
+                                      >
+                                        {l.expanded ? "Hide" : "View"}
+                                      </button>
+                                    </td>
+                                  </tr>
+
+                                  {l.expanded && (l.items || []).length > 0 && (
+                                    <tr className="bg-white">
+                                      <td colSpan={4} className="p-3">
+                                        <table className="w-full text-[11px] bg-white">
+                                          <thead className="bg-blue-100 text-gray-700">
+                                            <tr>
+                                              <th className="p-2 text-left">
+                                                Item Name
+                                              </th>
+                                              <th className="p-2 text-center">
+                                                Quantity
+                                              </th>
+                                              <th className="p-2 text-center">
+                                                Unit price
+                                              </th>
+                                              <th className="p-2 text-center">
+                                                Total Price
+                                              </th>
+                                            </tr>
+                                          </thead>
+                                          <tbody>
+                                            {(l.items || []).map(
+                                              (it: any, idx2: number) => (
+                                                <tr
+                                                  key={`${a.id}_${l.supplier_id}_${idx}_${idx2}`}
+                                                  className="border-b border-gray-100"
+                                                >
+                                                  <td className="p-2">
+                                                    {it.item_name}
+                                                  </td>
+                                                  <td className="p-2 text-center">
+                                                    {it.qty}
+                                                  </td>
+                                                  <td className="p-2 text-center">
+                                                    {it.unit_price?.toLocaleString()}
+                                                  </td>
+                                                  <td className="p-2 text-center font-semibold">
+                                                    {it.total?.toLocaleString()}
+                                                  </td>
+                                                </tr>
+                                              )
+                                            )}
+                                          </tbody>
+                                        </table>
+                                      </td>
+                                    </tr>
+                                  )}
+                                </Fragment>
+                              ))}
+                            </tbody>
+                          </table>
+                        )}
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
+              );
+            })}
+          </tbody>
+        </table>
       )}
     </div>
   );

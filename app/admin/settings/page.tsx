@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { PlusCircle, Edit, Trash2 } from "lucide-react";
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient"; // kept as in your original file
 import { useAuth } from "../../components/auth/AuthProvider";
 import "@/app/styles/admin.css";
 
@@ -10,10 +10,20 @@ export default function SettingsPage() {
   const { profile } = useAuth();
   const orgId = profile?.organization_id;
 
+  // Tabs
+  const [activeTab, setActiveTab] = useState<"departments" | "costcenters">(
+    "departments"
+  );
+
   // Departments
   const [departments, setDepartments] = useState<any[]>([]);
   const [showDeptModal, setShowDeptModal] = useState(false);
-  const [deptForm, setDeptForm] = useState({ id: "", name: "", code: "", is_active: true });
+  const [deptForm, setDeptForm] = useState({
+    id: "",
+    name: "",
+    code: "",
+    is_active: true,
+  });
   const [deptLoading, setDeptLoading] = useState(false);
 
   // Cost Centers
@@ -56,7 +66,12 @@ export default function SettingsPage() {
   // ===============================
   function openDeptModal(d?: any) {
     if (d)
-      setDeptForm({ id: d.id, name: d.name, code: d.code, is_active: d.is_active });
+      setDeptForm({
+        id: d.id,
+        name: d.name,
+        code: d.code,
+        is_active: d.is_active,
+      });
     else setDeptForm({ id: "", name: "", code: "", is_active: true });
     setShowDeptModal(true);
   }
@@ -166,124 +181,67 @@ export default function SettingsPage() {
   // ===============================
   return (
     <div className="admin-content">
-      <h1 className="text-2xl font-semibold text-[#012b73] mb-4">⚙️ Settings</h1>
-      <p className="text-gray-600 mb-6">
-        Manage departments and cost centers associated with your organization.
-      </p>
-
-      {/* DEPARTMENTS SECTION */}
-      <div className="bg-white border border-gray-100 shadow-sm rounded-lg mb-10 p-6">
-        <div className="flex justify-between items-center mb-3">
-          <h2 className="text-lg font-semibold text-[#012b73]">🏢 Departments</h2>
-          <button
-            onClick={() => openDeptModal()}
-            className="cta-btn primary flex items-center gap-2 px-3 py-1 rounded-md"
-          >
-            <PlusCircle size={16} /> Add Department
-          </button>
-        </div>
-        <table className="w-full text-sm">
-          <thead className="bg-[#f9fafc] text-gray-600 uppercase text-xs">
-            <tr>
-              <th className="p-2 text-left">Code</th>
-              <th className="p-2 text-left">Name</th>
-              <th className="p-2 text-center">Active</th>
-              <th className="p-2 text-center">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {departments.map((d) => (
-              <tr key={d.id} className="border-b hover:bg-[#f5f7fb]">
-                <td className="p-2">{d.code}</td>
-                <td className="p-2">{d.name}</td>
-                <td className="p-2 text-center">
-                  <ToggleSwitch
-                    checked={d.is_active}
-                    onChange={() => toggleDepartmentStatus(d)}
-                  />
-                </td>
-                <td className="p-2 text-center flex justify-center gap-2">
-                  <button onClick={() => openDeptModal(d)}>
-                    <Edit size={15} className="text-blue-600 hover:text-blue-800" />
-                  </button>
-                  <button onClick={() => deleteDepartment(d.id)}>
-                    <Trash2 size={15} className="text-red-600 hover:text-red-800" />
-                  </button>
-                </td>
-              </tr>
-            ))}
-            {!departments.length && (
-              <tr>
-                <td colSpan={4} className="p-4 text-center text-gray-500">
-                  No departments found.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+      {/* Tabs */}
+      <div className="flex gap-6 mb-8 border-b pb-1">
+        <button
+          onClick={() => setActiveTab("departments")}
+          className={`px-4 py-2 font-medium border-b-2 ${
+            activeTab === "departments"
+              ? "border-[#012b73] text-[#012b73]"
+              : "border-transparent text-gray-500 hover:text-[#012b73]"
+          }`}
+        >
+          Departments
+        </button>
+        <button
+          onClick={() => setActiveTab("costcenters")}
+          className={`px-4 py-2 font-medium border-b-2 ${
+            activeTab === "costcenters"
+              ? "border-[#012b73] text-[#012b73]"
+              : "border-transparent text-gray-500 hover:text-[#012b73]"
+          }`}
+        >
+          Cost Centers
+        </button>
       </div>
 
-      {/* COST CENTERS SECTION */}
-      <div className="bg-white border border-gray-100 shadow-sm rounded-lg p-6">
-        <div className="flex justify-between items-center mb-3">
-          <h2 className="text-lg font-semibold text-[#012b73]">💼 Cost Centers</h2>
-          <button
-            onClick={() => openCCModal()}
-            className="cta-btn primary flex items-center gap-2 px-3 py-1 rounded-md"
-          >
-            <PlusCircle size={16} /> Add Cost Center
-          </button>
-        </div>
-        <table className="w-full text-sm">
-          <thead className="bg-[#f9fafc] text-gray-600 uppercase text-xs">
-            <tr>
-              <th className="p-2 text-left">Code</th>
-              <th className="p-2 text-left">Name</th>
-              <th className="p-2 text-left">Department</th>
-              <th className="p-2 text-center">Active</th>
-              <th className="p-2 text-center">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {costCenters.map((cc) => (
-              <tr key={cc.id} className="border-b hover:bg-[#f5f7fb]">
-                <td className="p-2">{cc.code}</td>
-                <td className="p-2">{cc.name}</td>
-                <td className="p-2">{cc.departments?.name || "-"}</td>
-                <td className="p-2 text-center">
-                  <ToggleSwitch
-                    checked={cc.is_active}
-                    onChange={() => toggleCostCenterStatus(cc)}
-                  />
-                </td>
-                <td className="p-2 text-center flex justify-center gap-2">
-                  <button onClick={() => openCCModal(cc)}>
-                    <Edit size={15} className="text-blue-600 hover:text-blue-800" />
-                  </button>
-                  <button onClick={() => deleteCostCenter(cc.id)}>
-                    <Trash2 size={15} className="text-red-600 hover:text-red-800" />
-                  </button>
-                </td>
-              </tr>
-            ))}
-            {!costCenters.length && (
-              <tr>
-                <td colSpan={5} className="p-4 text-center text-gray-500">
-                  No cost centers found.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      {/* Tab Content */}
+      {activeTab === "departments" && (
+        <DepartmentsSection
+          departments={departments}
+          openDeptModal={openDeptModal}
+          deleteDepartment={deleteDepartment}
+          toggleDepartmentStatus={toggleDepartmentStatus}
+        />
+      )}
+
+      {activeTab === "costcenters" && (
+        <CostCentersSection
+          costCenters={costCenters}
+          openCCModal={openCCModal}
+          deleteCostCenter={deleteCostCenter}
+          toggleCostCenterStatus={toggleCostCenterStatus}
+        />
+      )}
 
       {/* ------------------ MODALS ------------------ */}
-
       {showDeptModal && (
         <Modal title="Department" onClose={() => setShowDeptModal(false)}>
           <div className="space-y-3">
-            <Input label="Code" value={deptForm.code} onChange={(e) => setDeptForm({ ...deptForm, code: e.target.value })} />
-            <Input label="Name" value={deptForm.name} onChange={(e) => setDeptForm({ ...deptForm, name: e.target.value })} />
+            <Input
+              label="Code"
+              value={deptForm.code}
+              onChange={(e: any) =>
+                setDeptForm({ ...deptForm, code: e.target.value })
+              }
+            />
+            <Input
+              label="Name"
+              value={deptForm.name}
+              onChange={(e: any) =>
+                setDeptForm({ ...deptForm, name: e.target.value })
+              }
+            />
             <button
               onClick={saveDepartment}
               disabled={deptLoading}
@@ -302,15 +260,31 @@ export default function SettingsPage() {
               label="Department"
               options={departments}
               value={ccForm.department_id}
-              onChange={(e) => setCCForm({ ...ccForm, department_id: e.target.value })}
+              onChange={(e: any) =>
+                setCCForm({ ...ccForm, department_id: e.target.value })
+              }
             />
-            <Input label="Code" value={ccForm.code} onChange={(e) => setCCForm({ ...ccForm, code: e.target.value })} />
-            <Input label="Name" value={ccForm.name} onChange={(e) => setCCForm({ ...ccForm, name: e.target.value })} />
+            <Input
+              label="Code"
+              value={ccForm.code}
+              onChange={(e: any) =>
+                setCCForm({ ...ccForm, code: e.target.value })
+              }
+            />
+            <Input
+              label="Name"
+              value={ccForm.name}
+              onChange={(e: any) =>
+                setCCForm({ ...ccForm, name: e.target.value })
+              }
+            />
             <textarea
               className="w-full border border-gray-300 rounded-md p-2 text-sm"
               placeholder="Description"
               value={ccForm.description}
-              onChange={(e) => setCCForm({ ...ccForm, description: e.target.value })}
+              onChange={(e) =>
+                setCCForm({ ...ccForm, description: e.target.value })
+              }
             />
             <button
               onClick={saveCostCenter}
@@ -326,7 +300,159 @@ export default function SettingsPage() {
   );
 }
 
+/* --------------------- SECTION COMPONENTS --------------------- */
+
+function DepartmentsSection({
+  departments,
+  openDeptModal,
+  deleteDepartment,
+  toggleDepartmentStatus,
+}: any) {
+  return (
+    <div className="bg-white border border-blue-200 shadow-md rounded-xl p-6">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-lg font-semibold text-[#012b73]">🏢 Departments</h2>
+        <button
+          onClick={() => openDeptModal()}
+          className="flex items-center gap-2 bg-[#1d4ed8] text-white px-3 py-1.5 rounded-lg hover:bg-[#153c9a] transition"
+        >
+          <PlusCircle size={16} /> Add Department
+        </button>
+      </div>
+
+      <div className="overflow-hidden rounded border border-blue-100">
+        <table className="w-full text-sm">
+          <thead className="bg-[#f1f5fb] text-gray-600 uppercase text-xs tracking-wide">
+            <tr>
+              <th className="p-3 text-left">Department Code</th>
+              <th className="p-3 text-left">Department Name</th>
+              <th className="p-3 text-center">Active</th>
+              <th className="p-3 text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {departments.map((d: any) => (
+              <tr key={d.id} className="hover:bg-[#f6f9ff]">
+                <td className="p-3 text-xs text-gray-700">{d.code}</td>
+                <td className="p-3 text-xs ">{d.name}</td>
+                <td className="p-3 text-center">
+                  <ToggleSwitch
+                    checked={d.is_active}
+                    onChange={() => toggleDepartmentStatus(d)}
+                  />
+                </td>
+                <td className="p-3 text-center flex justify-center gap-3">
+                  <button title="Edit" onClick={() => openDeptModal(d)}>
+                    <Edit
+                      size={16}
+                      className="text-blue-500 hover:text-blue-800 cursor-pointer"
+                    />
+                  </button>
+                  <button title="Delete" onClick={() => deleteDepartment(d.id)}>
+                    <Trash2
+                      size={16}
+                      className="text-red-500 hover:text-red-800 cursor-pointer"
+                    />
+                  </button>
+                </td>
+              </tr>
+            ))}
+            {!departments.length && (
+              <tr>
+                <td
+                  colSpan={4}
+                  className="p-5 text-center text-gray-500 text-sm"
+                >
+                  No departments found.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function CostCentersSection({
+  costCenters,
+  openCCModal,
+  deleteCostCenter,
+  toggleCostCenterStatus,
+}: any) {
+  return (
+    <div className="bg-white border border-blue-200 shadow-md rounded-xl p-6">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-lg font-semibold text-[#012b73]">💼 Cost Centers</h2>
+        <button
+          onClick={() => openCCModal()}
+          className="flex items-center gap-2 bg-[#1d4ed8] text-white px-3 py-1.5 rounded-lg hover:bg-[#153c9a] transition"
+        >
+          <PlusCircle size={16} /> Add Cost Center
+        </button>
+      </div>
+
+      <div className="overflow-hidden rounded border border-blue-100">
+        <table className="w-full text-sm">
+          <thead className="bg-[#f1f5fb] text-gray-600 uppercase text-xs tracking-wide">
+            <tr>
+              <th className="p-3 text-left">Code</th>
+              <th className="p-3 text-left">Name</th>
+              <th className="p-3 text-left">Department</th>
+              <th className="p-3 text-center">Active</th>
+              <th className="p-3 text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {costCenters.map((cc: any) => (
+              <tr key={cc.id} className="hover:bg-[#f6f9ff]">
+                <td className="p-3  text-xs text-gray-700">{cc.code}</td>
+                <td className="p-3  text-xs ">{cc.name}</td>
+                <td className="p-3   text-xs ">{cc.departments?.name || "-"}</td>
+                <td className="p-3 text-center">
+                  <ToggleSwitch
+                    checked={cc.is_active}
+                    onChange={() => toggleCostCenterStatus(cc)}
+                  />
+                </td>
+                <td className="p-3 text-center flex justify-center gap-3">
+                  <button title="Edit" onClick={() => openCCModal(cc)}>
+                    <Edit
+                      size={16}
+                      className="text-blue-500 hover:text-blue-800 cursor-pointer"
+                    />
+                  </button>
+                  <button
+                    title="Delete"
+                    onClick={() => deleteCostCenter(cc.id)}
+                  >
+                    <Trash2
+                      size={16}
+                      className="text-red-500 hover:text-red-800 cursor-pointer"
+                    />
+                  </button>
+                </td>
+              </tr>
+            ))}
+            {!costCenters.length && (
+              <tr>
+                <td
+                  colSpan={5}
+                  className="p-5 text-center text-gray-500 text-sm"
+                >
+                  No cost centers found.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 /* --------------------- Reusable Components --------------------- */
+
 function Modal({ title, children, onClose }: any) {
   return (
     <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
@@ -353,7 +479,7 @@ function Input({ label, value, onChange }: any) {
       <input
         value={value}
         onChange={onChange}
-        className="w-full border border-gray-300 rounded-md p-2 text-sm"
+        className="w-full border border-gray-300 rounded-md p-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#012b73]"
       />
     </div>
   );
@@ -368,7 +494,7 @@ function Select({ label, options, value, onChange }: any) {
       <select
         value={value}
         onChange={onChange}
-        className="w-full border border-gray-300 rounded-md p-2 text-sm"
+        className="w-full border border-gray-300 rounded-md p-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#012b73]"
       >
         <option value="">Select...</option>
         {options.map((opt: any) => (
@@ -382,7 +508,14 @@ function Select({ label, options, value, onChange }: any) {
 }
 
 /* --------------------- Toggle Switch --------------------- */
-function ToggleSwitch({ checked, onChange }: { checked: boolean; onChange: () => void }) {
+
+function ToggleSwitch({
+  checked,
+  onChange,
+}: {
+  checked: boolean;
+  onChange: () => void;
+}) {
   return (
     <button
       onClick={onChange}

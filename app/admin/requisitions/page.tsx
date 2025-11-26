@@ -245,7 +245,7 @@ export default function RequisitionsPage() {
             <tr>
               <th className="p-3 text-left">ID</th>
               <th className="p-3 text-left">Description</th>
-              <th className="p-3 text-left">Cost-0Center Code/ Name</th>
+              <th className="p-3 text-left">Cost-Center Code/ Name</th>
               <th className="p-3 text-left">Requested By</th>
               <th className="p-3 text-right">Estimated Value</th>
               <th className="p-3 text-center">Status</th>

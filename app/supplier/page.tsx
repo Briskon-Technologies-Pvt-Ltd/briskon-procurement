@@ -466,182 +466,201 @@ export default function SupplierDashboard() {
             </div>
           </div>
 
-          {/* MAIN GRID: Opportunities + Auctions & Recent bids */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* LEFT: Opportunities */}
-            <section className="lg:col-span-2 space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-sm font-semibold text-slate-100">
-                    Opportunities for you
-                  </h3>
-                  <p className="text-xs text-slate-400">
-                    Latest RFQs that you can respond to.
-                  </p>
-                </div>
-                <div className="text-[11px] text-slate-400">
-                  Showing {filteredOpportunities.length} of{" "}
-                  {data.opportunities.length}
-                </div>
-              </div>
+{/* ===================== OPPORTUNITIES SECTION ===================== */}
+<section className="space-y-4 mt-6">
+  <div className="flex items-center mb-2">
+    <h3 className="text-sm font-semibold text-slate-100">Opportunities for you</h3>
+    <div className="flex-1 h-[1px] mx-3 bg-slate-800/60" />
+    <span className="text-[11px] text-slate-400">
+      {filteredOpportunities.length} / {data.opportunities.length}
+    </span>
+  </div>
 
-              <div className="rounded-2xl border border-slate-800/80 bg-slate-950/50 backdrop-blur-xl overflow-hidden">
-                {filteredOpportunities.length === 0 ? (
-                  <div className="py-10 text-center text-sm text-slate-400">
-                    No matching RFQs. Try a different search term.
-                  </div>
-                ) : (
-                  <ul className="divide-y divide-slate-800/70">
-                    {filteredOpportunities.map((o) => (
-                      <li
-                        key={o.id}
-                        className="px-4 py-3 hover:bg-slate-900/70 transition-colors"
-                      >
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <a
-                                href={`/supplier/opportunities/${o.id}`}
-                                className="text-sm font-medium text-slate-50 hover:text-indigo-300 line-clamp-1"
-                              >
-                                {o.title}
-                              </a>
-                              <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full border border-slate-700/80 text-slate-400">
-                                {o.visibility === "public"
-                                  ? "Public"
-                                  : "Invited"}
-                              </span>
-                            </div>
-                            <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-400">
-                              <span>
-                                Created on {formatDate(o.created_at)}{" "}
-                                {formatTime(o.created_at)}
-                              </span>
-                              <span className="inline-flex items-center gap-1">
-                                Status:
-                                <span className="font-medium text-slate-200">
-                                  {o.status}
-                                </span>
-                              </span>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <a
-                              href={`/supplier/opportunities/${o.id}`}
-                              className="inline-flex items-center rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold px-3 py-1.5 text-slate-50 shadow-sm shadow-indigo-500/40"
-                            >
-                              View & respond
-                            </a>
-                          </div>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            </section>
+  <div className="rounded-2xl border border-slate-800/60 bg-slate-950/50 backdrop-blur-md p-4">
+    {filteredOpportunities.length === 0 ? (
+      <div className="py-10 text-center text-sm text-slate-400">
+        No matching RFQs. Try a different search term.
+      </div>
+    ) : (
+      <div className="space-y-4">
+        {filteredOpportunities.map((o) => (
+          <div
+            key={o.id}
+            className="relative rounded-xl border border-slate-800/70 bg-slate-900/40 hover:bg-slate-900/60 transition shadow-sm p-4 flex flex-col justify-between"
+          >
+            {/* Public/Invited pill top-left */}
+            <span className="absolute top-3 left-3 px-2 py-0.5 rounded-full bg-indigo-600/20 text-indigo-300 border border-indigo-600/40 text-[10px] uppercase font-semibold">
+              {o.visibility === "public" ? "Public" : "Invited"}
+            </span>
 
-            {/* RIGHT: Auctions + Recent bid activity list */}
-            <section className="space-y-4">
-              {/* Auctions */}
-              <div className="rounded-2xl border border-slate-800/80 bg-slate-950/60 backdrop-blur-xl p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <h3 className="text-sm font-semibold text-slate-100">
-                      Your auctions
-                    </h3>
-                    <p className="text-xs text-slate-400">
-                      Active & upcoming auctions you can bid in.
-                    </p>
-                  </div>
-                </div>
+            <div className="space-y-2 mt-6">
+              <Link
+                href={`/supplier/opportunities/${o.id}`}
+                className="text-sm font-semibold text-slate-100 hover:text-indigo-300"
+              >
+                {o.title}
+              </Link>
 
-                {data.auctions.length === 0 ? (
-                  <p className="text-xs text-slate-500 py-6 text-center">
-                    No auctions assigned to you yet.
-                  </p>
-                ) : (
-                  <ul className="space-y-3">
-                    {data.auctions.map((a) => (
-                      <li
-                        key={a.id}
-                        className="rounded-xl border border-slate-800/80 bg-slate-900/50 px-3 py-2.5"
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <p className="text-xs font-medium text-slate-100 line-clamp-2">
-                              {a.title}
-                            </p>
-                            <p className="mt-1 text-[11px] text-slate-400">
-                              {a.start_at
-                                ? `Starts: ${formatDate(a.start_at)} ${formatTime(
-                                    a.start_at
-                                  )}`
-                                : "Start time TBA"}
-                              {a.end_at && (
-                                <>
-                                  <br />
-                                  Ends: {formatDate(a.end_at)}{" "}
-                                  {formatTime(a.end_at)}
-                                </>
-                              )}
-                            </p>
-                          </div>
-                          <a
-                            href={`/supplier/auctions/${a.id}`}
-                            className="inline-flex items-center rounded-md bg-indigo-600 hover:bg-indigo-500 text-[11px] font-semibold px-2.5 py-1 text-slate-50"
-                          >
-                            Enter room
-                          </a>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
+              <p className="text-[11px] text-slate-400">
+                {formatDate(o.created_at)} {formatTime(o.created_at)}
+              </p>
 
-              {/* Recent bid activity list */}
-              <div className="rounded-2xl border border-slate-800/80 bg-slate-950/60 backdrop-blur-xl p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <h3 className="text-sm font-semibold text-slate-100">
-                      Recent bid activity
-                    </h3>
-                    <p className="text-xs text-slate-400">
-                      Last {data.bidActivity.length} bids placed by you.
-                    </p>
-                  </div>
-                </div>
+              <p className="text-[11px] text-slate-400">
+                Status: <span className="text-slate-200 font-medium">{o.status}</span>
+              </p>
+            </div>
 
-                {(!data.bidActivity || data.bidActivity.length === 0) && (
-                  <p className="text-xs text-slate-500 py-6 text-center">
-                    You haven&apos;t placed any bids yet.
-                  </p>
-                )}
-
-                {data.bidActivity.length > 0 && (
-                  <ul className="space-y-2 max-h-56 overflow-y-auto pr-1">
-                    {data.bidActivity.map((b) => (
-                      <li
-                        key={b.id}
-                        className="flex items-center justify-between text-[11px] text-slate-300 border-b border-slate-800/60 last:border-b-0 pb-2"
-                      >
-                        <div className="flex-1 min-w-0">
-                          <p className="truncate">{b.auction_title}</p>
-                          <p className="text-[10px] text-slate-500">
-                            {formatDate(b.created_at)} {formatTime(b.created_at)}
-                          </p>
-                        </div>
-                        <span className="ml-2 font-semibold text-indigo-300">
-                          {b.amount}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            </section>
+            <div className="flex justify-end mt-3">
+              <Link
+                href={`/supplier/opportunities/${o.id}`}
+                className="inline-flex items-center gap-1 bg-indigo-600 hover:bg-indigo-500 text-[11px] font-semibold rounded-lg px-3 py-1.5 text-white shadow-sm"
+              >
+                Respond now
+              </Link>
+            </div>
           </div>
+        ))}
+      </div>
+    )}
+  </div>
+</section>
+
+{/* ======================= AUCTIONS SECTION ======================== */}
+<section className="space-y-4 mt-10">
+  <div className="flex items-center mb-2">
+    <h3 className="text-sm font-semibold text-slate-100">Your auctions</h3>
+    <div className="flex-1 h-[1px] mx-3 bg-slate-800/60" />
+  </div>
+
+  {data.auctions.length === 0 ? (
+    <p className="text-xs text-slate-500 py-5 text-center">
+      No auctions assigned.
+    </p>
+  ) : (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {([...data.auctions].sort((a, b) => {
+        const now = Date.now();
+        const startA = a.start_at ? new Date(a.start_at).getTime() : 0;
+        const endA = a.end_at ? new Date(a.end_at).getTime() : 0;
+        const startB = b.start_at ? new Date(b.start_at).getTime() : 0;
+        const endB = b.end_at ? new Date(b.end_at).getTime() : 0;
+
+        const statusA = now < startA ? "upcoming" : now > endA ? "closed" : "active";
+        const statusB = now < startB ? "upcoming" : now > endB ? "closed" : "active";
+
+        if (statusA === "closed" && statusB !== "closed") return 1;
+        if (statusA !== "closed" && statusB === "closed") return -1;
+        return 0;
+      })).map((a) => {
+        const userBids = data.bidActivity.filter((b) => b.auction_id === a.id);
+        const lastBid = userBids[userBids.length - 1];
+
+        const now = Date.now();
+        const start = a.start_at ? new Date(a.start_at).getTime() : null;
+        const end = a.end_at ? new Date(a.end_at).getTime() : null;
+
+        const status = (() => {
+          if (start && now < start) return "upcoming";
+          if (start && (!end || now <= end)) return "active";
+          if (end && now > end) return "closed";
+          return "unknown";
+        })();
+
+        // glossy status dot
+        const dotClass =
+          status === "active"
+            ? "bg-green-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]"
+            : status === "upcoming"
+            ? "bg-gray-300 shadow-[0_0_6px_rgba(209,213,219,0.8)]"
+            : "bg-red-400 shadow-[0_0_6px_rgba(248,113,113,0.8)]";
+
+        const countdownLabel = (() => {
+          if (status === "upcoming" && start) {
+            const hrs = Math.floor((start - now) / (1000 * 60 * 60));
+            return `Starts in ${hrs}h`;
+          }
+          if (status === "active" && end) {
+            const hrs = Math.floor((end - now) / (1000 * 60 * 60));
+            return `Ends in ${hrs}h`;
+          }
+          return null;
+        })();
+
+        // glossy gradient pills for auction type
+        const typeClass = {
+          standard:
+            "bg-gradient-to-r from-blue-500/40 to-blue-400/20 text-blue-100 border border-blue-400/40 shadow-[0_0_8px_rgba(96,165,250,0.5)] backdrop-blur-sm",
+          ranked:
+            "bg-gradient-to-r from-purple-600/40 to-purple-500/20 text-purple-100 border border-purple-400/40 shadow-[0_0_8px_rgba(168,85,247,0.5)] backdrop-blur-sm",
+          sealed:
+            "bg-gradient-to-r from-amber-500/40 to-amber-400/20 text-amber-100 border border-amber-400/40 shadow-[0_0_8px_rgba(251,191,36,0.5)] backdrop-blur-sm",
+          reverse:
+            "bg-gradient-to-r from-emerald-500/40 to-emerald-400/20 text-emerald-100 border border-emerald-400/40 shadow-[0_0_8px_rgba(52,211,153,0.5)] backdrop-blur-sm",
+        }[a.auction_type] ?? "bg-slate-700/40 text-slate-200";
+
+        return (
+          <div
+            key={a.id}
+            className="relative rounded-2xl border border-slate-800/80 bg-slate-900/40 p-5 hover:bg-slate-900/60 transition shadow-xl flex flex-col justify-between"
+          >
+            {/* glossy live status dot */}
+            <span className={`absolute top-3 left-3 h-2.5 w-2.5 rounded-full ${dotClass}`} />
+
+            {/* glossy auction type pill */}
+            <span
+              className={`absolute top-3 right-3 px-2.5 py-0.5 rounded-full text-[10px] uppercase font-bold ${typeClass}`}
+            >
+              {a.auction_type}
+            </span>
+
+            <div className="space-y-2">
+              <p className="text-sm font-semibold text-slate-100 truncate">{a.title}</p>
+
+              <p className="text-[11px] text-slate-400">
+                {a.start_at ? `Starts: ${formatDate(a.start_at)} ${formatTime(a.start_at)}` : "Starts TBA"}
+                {a.end_at && (
+                  <>
+                    <br />Ends: {formatDate(a.end_at)} {formatTime(a.end_at)}
+                  </>
+                )}
+              </p>
+
+              {countdownLabel && (
+                <span className="inline-block mt-1 px-2 py-0.5 rounded-md bg-indigo-600/20 text-indigo-200 text-[10px] uppercase font-semibold shadow-[0_0_6px_rgba(99,102,241,0.4)] backdrop-blur-md">
+                  {countdownLabel}
+                </span>
+              )}
+
+              {userBids.length > 0 ? (
+                <div className="mt-3 text-[13px] text-slate-200 font-medium space-y-1">
+                  <p>
+                    Last bid: <span className="text-indigo-300 font-bold">{lastBid.amount}</span>
+                  </p>
+                  <p>
+                    Total bids placed: <span className="text-indigo-300 font-bold">{userBids.length}</span>
+                  </p>
+                </div>
+              ) : (
+                <p className="text-[12px] text-slate-500 italic mt-2 font-medium">You haven't bid yet</p>
+              )}
+            </div>
+
+            <div className="flex justify-end mt-4">
+              <Link
+                href={`/supplier/auctions/${a.id}`}
+                className="px-4 py-1.5 rounded-md bg-indigo-600 hover:bg-indigo-500 text-[11px] font-semibold text-white shadow-[0_0_8px_rgba(99,102,241,0.6)]"
+              >
+                Enter auction
+              </Link>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  )}
+</section>
+
+       
         </>
       )}
     </div>
