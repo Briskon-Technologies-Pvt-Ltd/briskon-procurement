@@ -60,7 +60,7 @@ const approvalHistoryData = [
   },
 ];
 
-const statusColors = {
+const statusColors: { [key: string]: string } = {
   Approved: "bg-green-100 text-green-700",
   Rejected: "bg-red-100 text-red-700",
   Pending: "bg-yellow-100 text-yellow-700",
@@ -129,13 +129,12 @@ export default function ApprovalHistoryPage() {
         {filteredData.map((entry, index) => (
           <div key={entry.id} className="relative mb-6">
             <div
-              className={`absolute -left-[11px] w-5 h-5 rounded-full flex items-center justify-center border-2 ${
-                entry.status === "Approved"
+              className={`absolute -left-[11px] w-5 h-5 rounded-full flex items-center justify-center border-2 ${entry.status === "Approved"
                   ? "border-green-500 bg-green-100"
                   : entry.status === "Rejected"
-                  ? "border-red-500 bg-red-100"
-                  : "border-yellow-500 bg-yellow-100"
-              }`}
+                    ? "border-red-500 bg-red-100"
+                    : "border-yellow-500 bg-yellow-100"
+                }`}
             >
               {entry.status === "Approved" ? (
                 <CheckCircle size={10} className="text-green-600" />

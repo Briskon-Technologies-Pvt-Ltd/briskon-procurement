@@ -319,9 +319,10 @@ export async function GET(req: Request) {
       for (const item of proposal.line_items) {
         if (y < 80) break; // basic single-page guard
 
-        const desc = item.rfq_items?.description || "-";
-        const qty = item.rfq_items?.qty ?? "";
-        const uom = item.rfq_items?.uom ?? "";
+        const rfqItem = Array.isArray(item.rfq_items) ? item.rfq_items[0] : item.rfq_items;
+        const desc = rfqItem?.description || "-";
+        const qty = rfqItem?.qty ?? "";
+        const uom = rfqItem?.uom ?? "";
         const unitPrice = Number(item.unit_price || 0);
         const lineTotal = Number(item.total || 0);
 
@@ -469,7 +470,7 @@ export async function GET(req: Request) {
 
     const pdfBytes = await pdfDoc.save();
 
-    return new NextResponse(pdfBytes, {
+    return new NextResponse(pdfBytes as any, {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",

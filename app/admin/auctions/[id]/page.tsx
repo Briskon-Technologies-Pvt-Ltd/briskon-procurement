@@ -144,11 +144,11 @@ export default function AuctionDetailsPage() {
   /* ---------------------------------------------------------
      Save Changes (PATCH)
   --------------------------------------------------------- */
-     
+
   function cleanNum(val: any) {
     if (val === undefined || val === null) return null;
     if (typeof val === "number") return val;
-  
+
     if (typeof val === "string") {
       const v = val.trim();
       // Invalid numeric forms → convert to null
@@ -156,15 +156,15 @@ export default function AuctionDetailsPage() {
       const num = Number(v);
       return isNaN(num) ? null : num;
     }
-  
+
     return null;
   }
-  
+
   const handleSave = async () => {
     try {
 
       setSaving(true);
-      
+
       const sanitizedCfg = {
         ...cfg,
         starting_price: cleanNum(cfg.starting_price),
@@ -173,7 +173,7 @@ export default function AuctionDetailsPage() {
         auto_extend_minutes: cleanNum(cfg.auto_extend_minutes),
         auto_extend_window_seconds: cleanNum(cfg.auto_extend_window_seconds),
       };
-      
+
       const fields: any = {
         auction_updates: {
           auction_type: auctionType,
@@ -209,7 +209,7 @@ export default function AuctionDetailsPage() {
       const removedFiles = originalPaths.filter((p) => !existingPaths.includes(p));
       fields.files_to_delete = removedFiles.map((p) => {
         const f = auction?.files.find((x) => x.storage_path === p);
-        return f?.id || f?.storage_path || null;
+        return f?.storage_path || null;
       }).filter(Boolean);
 
       // New files to upload in FormData
@@ -244,20 +244,20 @@ export default function AuctionDetailsPage() {
   const handlePublish = async () => {
     try {
       setPublishing(true);
-  
+
       const fd = new FormData();
       fd.append("id", auctionId);
       fd.append("action", "publish");
       fd.append("fields", JSON.stringify({}));
-  
+
       const res = await fetch(`/api/auctions`, {
         method: "PATCH",
         body: fd,
       });
-  
+
       const json = await res.json();
       if (!json.success) throw new Error(json.error);
-  
+
       alert("Auction published");
       router.refresh();
       setIsEditing(false);
@@ -267,7 +267,7 @@ export default function AuctionDetailsPage() {
       setPublishing(false);
     }
   };
-  
+
   /* ---------------------------------------------------------
      UI
   --------------------------------------------------------- */
@@ -306,13 +306,12 @@ export default function AuctionDetailsPage() {
           <h1 className="text-xl font-semibold">{cfg.title || "Auction Details"}</h1>
 
           <span
-            className={`px-2 py-1 text-xs rounded-full ml-4 ${
-              auction.status === "draft"
+            className={`px-2 py-1 text-xs rounded-full ml-4 ${auction.status === "draft"
                 ? "bg-gray-200 text-gray-600"
                 : auction.status === "published"
-                ? "bg-green-100 text-green-700"
-                : "bg-blue-100 text-blue-700"
-            }`}
+                  ? "bg-green-100 text-green-700"
+                  : "bg-blue-100 text-blue-700"
+              }`}
           >
             {auction.status}
           </span>
@@ -555,95 +554,95 @@ export default function AuctionDetailsPage() {
 
       {/* Files */}
       <section className="bg-white p-6 rounded shadow space-y-4">
-  <h2 className="text-lg font-semibold">Files</h2>
+        <h2 className="text-lg font-semibold">Files</h2>
 
-  {/* LIST OF EXISTING FILES */}
-  {existingFiles.length === 0 ? (
-    <div className="text-gray-500">No files uploaded.</div>
-  ) : (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
-      {existingFiles.map((f) => {
-        const isImage = /\.(png|jpg|jpeg|webp)$/i.test(f.filename || "");
-        const isPDF = /\.pdf$/i.test(f.filename || "");
-        const isExcel = /\.(xls|xlsx)$/i.test(f.filename || "");
-        const isWord = /\.(doc|docx)$/i.test(f.filename || "");
-        const isZip = /\.zip$/i.test(f.filename || "");
+        {/* LIST OF EXISTING FILES */}
+        {existingFiles.length === 0 ? (
+          <div className="text-gray-500">No files uploaded.</div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+            {existingFiles.map((f) => {
+              const isImage = /\.(png|jpg|jpeg|webp)$/i.test(f.filename || "");
+              const isPDF = /\.pdf$/i.test(f.filename || "");
+              const isExcel = /\.(xls|xlsx)$/i.test(f.filename || "");
+              const isWord = /\.(doc|docx)$/i.test(f.filename || "");
+              const isZip = /\.zip$/i.test(f.filename || "");
 
-        const shortName =
-          f.filename?.replace(/^.*?_/, "") || "File";
+              const shortName =
+                f.filename?.replace(/^.*?_/, "") || "File";
 
-        return (
-          <div
-            key={f.storage_path}
-            className="border rounded-lg overflow-hidden bg-gray-50 shadow-sm"
-          >
-            {/* Thumbnail / Icon */}
-            <a
-              href={f.public_url || "#"}
-              target="_blank"
-              className="block"
-            >
-              <div className="h-40 flex items-center justify-center bg-white border-b">
-                {isImage ? (
-                  <img
-                    src={f.public_url}
-                    className="h-full w-full object-cover"
-                    alt="file"
-                  />
-                ) : isPDF ? (
-                  <div className="text-red-600 text-xl font-bold">PDF</div>
-                ) : isExcel ? (
-                  <div className="text-green-600 text-xl font-bold">XLS</div>
-                ) : isWord ? (
-                  <div className="text-blue-600 text-xl font-bold">DOC</div>
-                ) : isZip ? (
-                  <div className="text-yellow-600 text-xl font-bold">ZIP</div>
-                ) : (
-                  <div className="text-gray-500 text-sm">FILE</div>
-                )}
-              </div>
-            </a>
-
-            {/* Filename + Delete (if editing) */}
-            <div className="p-3 flex items-center justify-between">
-              <span className="text-sm text-blue-700 truncate">
-                {shortName}
-              </span>
-
-              {isEditing && (
-                <button
-                  onClick={() =>
-                    setExistingFiles((prev) =>
-                      prev.filter((x) => x.storage_path !== f.storage_path)
-                    )
-                  }
-                  className="text-red-600 ml-3"
+              return (
+                <div
+                  key={f.storage_path}
+                  className="border rounded-lg overflow-hidden bg-gray-50 shadow-sm"
                 >
-                  <Trash size={16} />
-                </button>
-              )}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  )}
+                  {/* Thumbnail / Icon */}
+                  <a
+                    href={f.public_url || "#"}
+                    target="_blank"
+                    className="block"
+                  >
+                    <div className="h-40 flex items-center justify-center bg-white border-b">
+                      {isImage ? (
+                        <img
+                          src={f.public_url}
+                          className="h-full w-full object-cover"
+                          alt="file"
+                        />
+                      ) : isPDF ? (
+                        <div className="text-red-600 text-xl font-bold">PDF</div>
+                      ) : isExcel ? (
+                        <div className="text-green-600 text-xl font-bold">XLS</div>
+                      ) : isWord ? (
+                        <div className="text-blue-600 text-xl font-bold">DOC</div>
+                      ) : isZip ? (
+                        <div className="text-yellow-600 text-xl font-bold">ZIP</div>
+                      ) : (
+                        <div className="text-gray-500 text-sm">FILE</div>
+                      )}
+                    </div>
+                  </a>
 
-  {/* ADD NEW FILES */}
-  {isEditing && (
-    <div className="pt-4">
-      <label className="block text-sm mb-1 font-medium">
-        Add Files
-      </label>
-      <input
-        type="file"
-        multiple
-        onChange={(e) => setNewFiles(Array.from(e.target.files || []))}
-        className="block w-full border rounded p-2 bg-white"
-      />
-    </div>
-  )}
-</section>
+                  {/* Filename + Delete (if editing) */}
+                  <div className="p-3 flex items-center justify-between">
+                    <span className="text-sm text-blue-700 truncate">
+                      {shortName}
+                    </span>
+
+                    {isEditing && (
+                      <button
+                        onClick={() =>
+                          setExistingFiles((prev) =>
+                            prev.filter((x) => x.storage_path !== f.storage_path)
+                          )
+                        }
+                        className="text-red-600 ml-3"
+                      >
+                        <Trash size={16} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* ADD NEW FILES */}
+        {isEditing && (
+          <div className="pt-4">
+            <label className="block text-sm mb-1 font-medium">
+              Add Files
+            </label>
+            <input
+              type="file"
+              multiple
+              onChange={(e) => setNewFiles(Array.from(e.target.files || []))}
+              className="block w-full border rounded p-2 bg-white"
+            />
+          </div>
+        )}
+      </section>
 
     </div>
   );

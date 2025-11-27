@@ -46,10 +46,12 @@ const supabase = createClient(
 
 // --- GET /api/approvals/[id]/history ---
 export async function GET(
-  _req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+)
+ {
   try {
+    const params = await context.params;
     const approvalId = params.id;
 
     // 1️⃣ Fetch main approval record

@@ -10,9 +10,10 @@ const supabase = createClient(
 
 // POST /api/rfqs/:id/convert
 // Accepts FormData: auction_start_at, auction_end_at, visibility_mode, created_by
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const id = params.id;
+    const resolvedParams = await params;
+    const id = resolvedParams.id;
     const formData = await req.formData();
     const auction_start_at = (formData.get("auction_start_at") as string) || null;
     const auction_end_at = (formData.get("auction_end_at") as string) || null;

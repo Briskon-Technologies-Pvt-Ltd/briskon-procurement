@@ -55,6 +55,7 @@ type Category = {
   id: string;
   name: string;
   parent_id: string | null;
+  children?: Category[];
 };
 
 export default function SupplierProfilePage() {
@@ -110,27 +111,30 @@ export default function SupplierProfilePage() {
 
   // =============== UTILITIES =====================
   const buildCategoryTree = (cats: Category[], ids: string[]) => {
-    const map: Record<string, Category & { children: Category[] }> = {};
+    const map: Record<string, Category> = {};
     cats.forEach((c) => (map[c.id] = { ...c, children: [] }));
     const roots: Category[] = [];
     cats.forEach((c) => {
       if (c.parent_id && map[c.parent_id]) {
-        map[c.parent_id].children.push(map[c.id]);
+        map[c.parent_id].children!.push(map[c.id]);
       } else {
         roots.push(map[c.id]);
       }
     });
 
-    const relevant = (node: Category & { children: Category[] }) => {
-      if (ids.includes(node.id))
-        return { ...node, children: node.children.map(relevant).filter(Boolean) };
-      const childMatches = node.children.map(relevant).filter(Boolean);
+    const relevant = (node: Category): Category | null => {
+      const children = node.children || [];
+      if (ids.includes(node.id)) {
+        const filteredChildren = children.map(relevant).filter((n): n is Category => n !== null);
+        return { ...node, children: filteredChildren };
+      }
+      const childMatches = children.map(relevant).filter((n): n is Category => n !== null);
       return childMatches.length > 0
         ? { ...node, children: childMatches }
         : null;
     };
 
-    return roots.map(relevant).filter(Boolean) as any[];
+    return roots.map(relevant).filter((n): n is Category => n !== null);
   };
 
   const renderCategoryTree = (nodes: Category[], depth = 0) => (
@@ -186,13 +190,12 @@ export default function SupplierProfilePage() {
           </h1>
         </div>
         <span
-          className={`px-3 py-1 rounded-full text-sm ${
-            supplier.status === "approved"
-              ? "bg-green-100 text-green-700"
-              : supplier.status === "pending"
+          className={`px-3 py-1 rounded-full text-sm ${supplier.status === "approved"
+            ? "bg-green-100 text-green-700"
+            : supplier.status === "pending"
               ? "bg-yellow-100 text-yellow-700"
               : "bg-gray-100 text-gray-700"
-          }`}
+            }`}
         >
           {supplier.status}
         </span>

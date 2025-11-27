@@ -7,9 +7,10 @@ const supabase = createClient(
 );
 
 // POST /api/suppliers/[id]/approve
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const supplierId = params.id;
+    const resolvedParams = await params;
+    const supplierId = resolvedParams.id;
 
     // Optional: read approver info from body (for audit trail)
     const body = await req.json().catch(() => ({}));

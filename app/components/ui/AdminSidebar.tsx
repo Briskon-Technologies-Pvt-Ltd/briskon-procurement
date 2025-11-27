@@ -17,7 +17,12 @@ import {
   LayoutDashboard,
 } from "lucide-react";
 
-export default function AdminSidebar() {
+interface AdminSidebarProps {
+  collapsed: boolean;
+  onToggle: () => void;
+}
+
+export default function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
 
@@ -31,10 +36,10 @@ export default function AdminSidebar() {
     { icon: Trophy, label: "Awards", path: "/admin/awards" },
     { icon: FileCheck, label: "Orders", path: "/admin/purchase-orders" },
     { icon: FileSignature, label: "Messages", path: "/admin/messages" },
-   // { icon: Shield, label: "Roles & Access", path: "/admin/roles-access" },
-   // { icon: ListChecks, label: "Approval Templates", path: "/admin/approval-templates" },
-   //{ icon: History, label: "Approval History", path: "/admin/approval-history" },
-   // { icon: BarChart3, label: "Analytics", path: "/admin/analytics" },
+    // { icon: Shield, label: "Roles & Access", path: "/admin/roles-access" },
+    // { icon: ListChecks, label: "Approval Templates", path: "/admin/approval-templates" },
+    //{ icon: History, label: "Approval History", path: "/admin/approval-history" },
+    // { icon: BarChart3, label: "Analytics", path: "/admin/analytics" },
   ];
 
   const handleNavigation = (path: string) => {

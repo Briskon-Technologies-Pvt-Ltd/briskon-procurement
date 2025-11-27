@@ -26,9 +26,10 @@ const supabase = createClient(
  * - Links PO to award.
  * - Adds audit log entry.
  */
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const awardId = params.id;
+    const resolvedParams = await params;
+    const awardId = resolvedParams.id;
     const body = await req.json();
 
     const { organization_id, supplier_id, created_by, currency, total_amount } = body;
@@ -127,9 +128,10 @@ export async function POST(req: Request, { params }: { params: { id: string } })
  * GET /api/awards/[id]/po
  * Fetch existing PO linked to a specific award
  */
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const awardId = params.id;
+    const resolvedParams = await params;
+    const awardId = resolvedParams.id;
 
     const { data, error } = await supabase
       .from("purchase_orders")

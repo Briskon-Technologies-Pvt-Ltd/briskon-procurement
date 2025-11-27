@@ -15,9 +15,10 @@ const supabase = createClient(
  *   "award_summary": "optional text summary of reason or notes"
  * }
  */
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const proposalId = params.id;
+    const resolvedParams = await params;
+    const proposalId = resolvedParams.id;
     const body = await req.json();
     const { awarded_by, award_summary } = body;
 

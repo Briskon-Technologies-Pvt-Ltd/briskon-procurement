@@ -11,9 +11,10 @@ const supabase = createClient(
  * Ends an auction (status → 'closed')
  * Body: { ended_by: "profile_uuid", reason?: "optional reason" }
  */
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const auctionId = params.id;
+    const resolvedParams = await params;
+    const auctionId = resolvedParams.id;
     const body = await req.json();
     const endedBy = body.ended_by;
     const reason = body.reason || "Manually ended by admin";

@@ -11,9 +11,10 @@ const supabase = createClient(
  * Starts an auction (status → 'live')
  * Body: { started_by: "profile_uuid" }
  */
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const auctionId = params.id;
+    const resolvedParams = await params;
+    const auctionId = resolvedParams.id;
     const body = await req.json();
     const startedBy = body.started_by;
 

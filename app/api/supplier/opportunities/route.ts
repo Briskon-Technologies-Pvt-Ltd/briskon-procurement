@@ -91,7 +91,7 @@ export async function GET(req: Request) {
         created_at: r.created_at,
         start_at: r.created_at, // using created date as fallback
         end_at: r.end_at, // no deadline field yet
-        buyer_name: r.organizations?.name || "Unknown organization",
+        buyer_name: (r.organizations as any)?.[0]?.name || "Unknown organization",
         proposal_status: proposal ? proposal.status : "Not submitted",
         proposal_submitted_at: proposal ? proposal.submitted_at : null,
       };

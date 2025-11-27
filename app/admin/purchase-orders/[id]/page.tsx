@@ -58,13 +58,12 @@ export default function PurchaseOrderDetailPage() {
       {/* Status + Actions */}
       <div className="flex items-center gap-4 mb-8">
         <span
-          className={`px-3 py-1.5 rounded-full text-sm font-medium ${
-            po.status === "fulfilled"
+          className={`px-3 py-1.5 rounded-full text-sm font-medium ${po.status === "fulfilled"
               ? "bg-green-100 text-green-700"
               : po.status === "cancelled"
-              ? "bg-red-100 text-red-700"
-              : "bg-blue-100 text-blue-700"
-          }`}
+                ? "bg-red-100 text-red-700"
+                : "bg-blue-100 text-blue-700"
+            }`}
         >
           {po.status}
         </span>
@@ -145,17 +144,20 @@ export default function PurchaseOrderDetailPage() {
               </tr>
             </thead>
             <tbody>
-              {po.proposal.line_items.map((item: any, index: number) => (
-                <tr key={index} className="hover:bg-gray-50">
-                  <td className="p-2 border">{item.rfq_items.description}</td>
-                  <td className="p-2 border text-center">{item.rfq_items.qty}</td>
-                  <td className="p-2 border text-center">{item.rfq_items.uom}</td>
-                  <td className="p-2 border text-right">{item.unit_price.toLocaleString()}</td>
-                  <td className="p-2 border text-right font-semibold">
-                    {item.total.toLocaleString()}
-                  </td>
-                </tr>
-              ))}
+              {po.proposal.line_items.map((item: any, index: number) => {
+                const rfqItem = Array.isArray(item.rfq_items) ? item.rfq_items[0] : item.rfq_items;
+                return (
+                  <tr key={index} className="hover:bg-gray-50">
+                    <td className="p-2 border">{rfqItem?.description}</td>
+                    <td className="p-2 border text-center">{rfqItem?.qty}</td>
+                    <td className="p-2 border text-center">{rfqItem?.uom}</td>
+                    <td className="p-2 border text-right">{item.unit_price.toLocaleString()}</td>
+                    <td className="p-2 border text-right font-semibold">
+                      {item.total.toLocaleString()}
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
 

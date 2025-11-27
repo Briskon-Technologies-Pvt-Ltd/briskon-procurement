@@ -44,6 +44,8 @@ type RFQ = {
   invited_suppliers_count?: number;
   received_proposals?: number;
   visibility?: string;
+  award_id?: string;
+  invited_suppliers?: any[];
 };
 
 export default function RFQDashboard() {
@@ -149,7 +151,7 @@ export default function RFQDashboard() {
     1,
     Math.ceil(statusFilteredRFQs.length / pageSize)
   );
-  
+
   /* ---------- KPI Click Handler ---------- */
   const handleKPISelect = (status: any) => {
     setActiveStatus(status);
@@ -199,7 +201,7 @@ export default function RFQDashboard() {
     try {
       const resLB = await fetch(`/api/bids/leaderboard?auction_id=${auctionId}`);
       const jsonLB = await resLB.json();
-  
+
       if (jsonLB.success) {
         setLeaderboardModal({
           open: true,
@@ -211,7 +213,7 @@ export default function RFQDashboard() {
       console.error("Error opening leaderboard:", e);
     }
   };
-  
+
 
   // 3) load item-level details when user expands a supplier row
   const loadItemsForSupplier = async (supplierId: string) => {
@@ -288,24 +290,24 @@ export default function RFQDashboard() {
       case "converted_to_auction":
         return (
           <button
-          className="text-blue-600 hover:text-blue-800 font-semibold"
-          onClick={() => loadAuctionIdAndOpenLeaderboard(r.id)}
-        >
-          View Leaderboard
-        </button>
-        
+            className="text-blue-600 hover:text-blue-800 font-semibold"
+            onClick={() => loadAuctionIdAndOpenLeaderboard(r.id)}
+          >
+            View Leaderboard
+          </button>
+
         );
 
-        case "awarded":
-          return (
-            <Link
-              href={`/admin/awards/${r.award_id}`}
-              className="text-purple-600 hover:text-purple-800 font-semibold"
-            >
-              View Award
-            </Link>
-          );
-        
+      case "awarded":
+        return (
+          <Link
+            href={`/admin/awards/${r.award_id}`}
+            className="text-purple-600 hover:text-purple-800 font-semibold"
+          >
+            View Award
+          </Link>
+        );
+
       default:
         return <span className="text-gray-500 text-xs">-</span>;
     }
@@ -410,11 +412,10 @@ export default function RFQDashboard() {
           <button
             key={key}
             onClick={() => setActiveStatus(key as any)}
-            className={`px-3 py-1.5 rounded-full text-sm font-medium border ${
-              activeStatus === key
-                ? "bg-blue-400 text-white border-blue-800"
-                : "bg-white text-black border-blue-200 hover:bg-blue-50"
-            }`}
+            className={`px-3 py-1.5 rounded-full text-sm font-medium border ${activeStatus === key
+              ? "bg-blue-400 text-white border-blue-800"
+              : "bg-white text-black border-blue-200 hover:bg-blue-50"
+              }`}
           >
             {label}
           </button>
@@ -450,7 +451,7 @@ export default function RFQDashboard() {
                     key={r.id}
                     className="border-b border-gray-100 hover:bg-gray-50"
                   >
-                    
+
                     <td className="px-4 py-3 max-w-[220px]">
                       <div className="font-medium text-gray-800 truncate">{r.title}</div>
 
@@ -466,21 +467,21 @@ export default function RFQDashboard() {
                     <td className="px-4 py-3 text-gray-500">
                       {r.end_at
                         ? new Date(r.end_at)
-                            .toLocaleString("en-IN", {
-                              day: "2-digit",
-                              month: "short",
-                              year: "2-digit",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                              hour12: true,
-                            })
-                            .replace(",", "")
+                          .toLocaleString("en-IN", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "2-digit",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            hour12: true,
+                          })
+                          .replace(",", "")
                         : "-"}
                     </td>
                     <td className="px-4 py-3 text-center">
                       {r.items_count ?? 0}
                     </td>
-                    
+
                     <td className="px-4 py-3 text-center">
                       {r.visibility === "public" ? (
                         <span className="text-blue-500 text-[11px]">🌐 Open to all </span>
@@ -496,15 +497,15 @@ export default function RFQDashboard() {
                     <td className="px-4 py-3 text-gray-500">
                       {r.created_at
                         ? new Date(r.created_at)
-                            .toLocaleString("en-IN", {
-                              day: "2-digit",
-                              month: "short",
-                              year: "2-digit",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                              hour12: true,
-                            })
-                            .replace(",", "")
+                          .toLocaleString("en-IN", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "2-digit",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            hour12: true,
+                          })
+                          .replace(",", "")
                         : "-"}
                     </td>
 
@@ -684,10 +685,9 @@ const KPI = ({ label, value, icon, active, onClick }: any) => (
   <div
     onClick={onClick}
     className={`cursor-pointer p-5 rounded-xl shadow text-center border transition-all
-      ${
-        active
-          ? "bg-blue-600 text-white border-blue-700 scale-[1.02]"
-          : "bg-white text-gray-800 border-blue-200 hover:shadow-md hover:border-blue-700"
+      ${active
+        ? "bg-blue-600 text-white border-blue-700 scale-[1.02]"
+        : "bg-white text-gray-800 border-blue-200 hover:shadow-md hover:border-blue-700"
       }
     `}
   >
@@ -706,25 +706,24 @@ const ChartCard = ({ title, children }: any) => (
 const StatusPill = ({ status }: any) => (
   <span
     className={`px-3 py-1 rounded-full text-xs capitalize
-    ${
-      status === "draft"
+    ${status === "draft"
         ? "bg-gray-200 text-gray-700"
         : status === "published"
-        ? "bg-green-200 text-green-700"
-        : status === "converted_to_auction"
-        ? "bg-blue-200 text-blue-700"
-        : status === "awarded"
-        ? "bg-purple-200 text-purple-700"
-        : "bg-gray-100 text-gray-600"
-    }`}
+          ? "bg-green-200 text-green-700"
+          : status === "converted_to_auction"
+            ? "bg-blue-200 text-blue-700"
+            : status === "awarded"
+              ? "bg-purple-200 text-purple-700"
+              : "bg-gray-100 text-gray-600"
+      }`}
   >
     {status}
   </span>
 );
 
- 
 
-const SupplierChips = ({ suppliers = [] }) => {
+
+const SupplierChips = ({ suppliers = [] }: { suppliers?: any[] }) => {
   const [showTooltip, setShowTooltip] = useState(false);
 
   const count = suppliers.length;

@@ -897,41 +897,39 @@ export default function SupplierProfilePage() {
                       </td>
 
                       {/* View / Delete */}
-                      
+
                       <td className="py-2 px-3 rounded-r-xl text-right">
-  <div className="flex items-center justify-end gap-2">
-    {doc.storage_path ? (
-      <button
-        type="button"
-        onClick={() => {
-          const cleanedPath = doc.storage_path.replace(/^\//, "");
-          const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+                        <div className="flex items-center justify-end gap-2">
+                          {doc.storage_path ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (!doc.storage_path) return;
+                                const cleanedPath = doc.storage_path.replace(/^\//, "");
+                                const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+                                const fullUrl = `${baseUrl}/storage/v1/object/public/supplier-documents/${cleanedPath}`;
+                                console.log("Opening file:", fullUrl);
+                                window.open(fullUrl, "_blank", "noopener,noreferrer");
+                              }}
+                              className="inline-flex items-center gap-1 rounded-md bg-indigo-600 hover:bg-indigo-500 text-[11px] font-semibold px-2.5 py-1 text-slate-50"
+                            >
+                              View
+                            </button>
+                          ) : (
+                            <span className="text-slate-500">No file</span>
+                          )}
 
-          // Correct bucket name: supplier-documents
-          const fullUrl = `${baseUrl}/storage/v1/object/public/supplier-documents/${cleanedPath}`;
-
-          console.log("Opening file:", fullUrl);
-          window.open(fullUrl, "_blank", "noopener,noreferrer");
-        }}
-        className="inline-flex items-center gap-1 rounded-md bg-indigo-600 hover:bg-indigo-500 text-[11px] font-semibold px-2.5 py-1 text-slate-50"
-      >
-        View
-      </button>
-    ) : (
-      <span className="text-slate-500">No file</span>
-    )}
-
-    {editMode && (
-      <button
-        type="button"
-        onClick={() => handleDeleteDocument(doc)}
-        className="inline-flex items-center justify-center rounded-md border border-rose-500/40 text-rose-300 hover:bg-rose-900/40 px-1.5 py-1"
-      >
-        <X className="w-3 h-3" />
-      </button>
-    )}
-  </div>
-</td>
+                          {editMode && (
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteDocument(doc)}
+                              className="inline-flex items-center justify-center rounded-md border border-rose-500/40 text-rose-300 hover:bg-rose-900/40 px-1.5 py-1"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
 
 
                     </tr>
@@ -972,8 +970,9 @@ export default function SupplierProfilePage() {
               {saving ? "Saving…" : "Save changes"}
             </button>
           </>
-        )}
-      </div>
-    </div>
+        )
+        }
+      </div >
+    </div >
   );
 }

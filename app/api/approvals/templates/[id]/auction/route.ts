@@ -46,9 +46,10 @@ const supabase = createClient(
 );
 
 // --- POST /api/approvals/templates/[id]/auction ---
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const templateId = params.id;
+    const resolvedParams = await params;
+    const templateId = resolvedParams.id;
     const body = await req.json();
 
     const { auction_id, created_by } = body;

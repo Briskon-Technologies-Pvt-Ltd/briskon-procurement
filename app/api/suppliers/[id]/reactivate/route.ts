@@ -7,8 +7,9 @@ const supabase = createClient(
 );
 
 // POST /api/suppliers/[id]/reactivate
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const resolvedParams = await params;
     const body = await req.json().catch(() => ({}));
 
     const { data, error } = await supabase
@@ -21,7 +22,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
           reactivated_by: body?.actor_profile_id || null,
         },
       })
-      .eq("id", params.id)
+      .eq("id", resolvedParams.id)
       .select()
       .single();
 
@@ -32,7 +33,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       {
         actor_profile_id: body?.actor_profile_id ?? null,
         resource_type: "supplier",
-        resource_id: params.id,
+        resource_id: resolvedParams.id,
         action: "reactivated",
       },
     ]);

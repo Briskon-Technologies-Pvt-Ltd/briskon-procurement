@@ -14,9 +14,10 @@ const supabase = createClient(
  *   "reason": "Auction ended as scheduled"
  * }
  */
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const auctionId = params.id;
+    const resolvedParams = await params;
+    const auctionId = resolvedParams.id;
     const body = await req.json();
     const { performed_by, reason } = body;
 

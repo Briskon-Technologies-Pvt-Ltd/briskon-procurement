@@ -10,9 +10,10 @@ const supabase = createClient(
  * GET /api/auctions/[id]/summary
  * Fetch full auction snapshot including bids, awards, and supplier stats.
  */
-export async function GET(_req: Request, { params }: { params: { id: string } }) {
+export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const auctionId = params.id;
+    const resolvedParams = await params;
+    const auctionId = resolvedParams.id;
 
     // Fetch auction core info
     const { data: auction, error: auctionError } = await supabase

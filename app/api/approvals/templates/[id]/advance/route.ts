@@ -42,9 +42,10 @@ const supabase = createClient(
 );
 
 // --- POST /api/approvals/[id]/advance ---
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const approvalId = params.id;
+    const resolvedParams = await params;
+    const approvalId = resolvedParams.id;
     const body = await req.json();
 
     const { actor_profile_id, action, comment } = body;

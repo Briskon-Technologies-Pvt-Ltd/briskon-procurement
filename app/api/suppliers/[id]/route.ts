@@ -7,12 +7,13 @@ const supabase = createClient(
 );
 
 // GET /api/suppliers/[id]
-export async function GET(_: Request, { params }: { params: { id: string } }) {
+export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const resolvedParams = await params;
     const { data, error } = await supabase
       .from("suppliers")
       .select("*")
-      .eq("id", params.id)
+      .eq("id", resolvedParams.id)
       .single();
 
     if (error) throw error;
@@ -24,8 +25,9 @@ export async function GET(_: Request, { params }: { params: { id: string } }) {
 }
 
 // PUT /api/suppliers/[id]
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const resolvedParams = await params;
     const body = await req.json();
 
     const updateFields = ["company_name", "country", "registration_no", "status", "metadata"];
@@ -38,7 +40,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     const { data, error } = await supabase
       .from("suppliers")
       .update(updates)
-      .eq("id", params.id)
+      .eq("id", resolvedParams.id)
       .select()
       .single();
 

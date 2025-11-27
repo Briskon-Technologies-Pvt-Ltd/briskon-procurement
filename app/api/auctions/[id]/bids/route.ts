@@ -9,20 +9,6 @@ const supabase = createClient(
 /**
  * GET /api/auctions/[id]/bids
  * Query Params (optional):
- *  - supplier_id: filter by supplier
- *  - sort: 'asc' or 'desc' (default desc)
- */
-export async function GET(req: Request, { params }: { params: { id: string } }) {
-  try {
-    const url = new URL(req.url);
-    const supplierId = url.searchParams.get("supplier_id");
-    const sort = url.searchParams.get("sort") || "desc";
-    const auctionId = params.id;
-
-    // Build query
-    let query = supabase
-      .from("bids")
-      .select(
         `
         id,
         auction_id,
@@ -68,9 +54,10 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
  *   "metadata": { ...optional }
  * }
  */
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const auctionId = params.id;
+    const resolvedParams = await params;
+    const auctionId = resolvedParams.id;
     const body = await req.json();
 
     const { supplier_id, placed_by_profile_id, auction_item_id, amount, currency, metadata } = body;

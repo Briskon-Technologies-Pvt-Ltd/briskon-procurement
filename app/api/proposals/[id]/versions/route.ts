@@ -19,9 +19,10 @@ const supabase = createClient(
  *   "size": 120000
  * }
  */
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const fileId = params.id;
+    const resolvedParams = await params;
+    const fileId = resolvedParams.id;
     const body = await req.json();
 
     const { uploaded_by, storage_path, filename, content_type, size } = body;
@@ -106,9 +107,10 @@ export async function POST(req: Request, { params }: { params: { id: string } })
  * GET /api/files/[id]/versions
  * Fetch all versions for a given file
  */
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const fileId = params.id;
+    const resolvedParams = await params;
+    const fileId = resolvedParams.id;
 
     const { data, error } = await supabase
       .from("file_versions")

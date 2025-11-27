@@ -52,10 +52,10 @@ export async function GET() {
     const { data: categories } =
       categoryIds.length > 0
         ? await supabase
-            .from("categories")
-            .select("id, name")
-            .in("id", categoryIds)
-        : { data: [], error: null };
+          .from("categories")
+          .select("id, name")
+          .in("id", categoryIds)
+        : { data: [] };
 
     // --------- 4. Documents ---------
     const { data: documents } = await supabase
@@ -143,7 +143,7 @@ export async function GET() {
         id: s.id,
         name: s.company_name,
         country: s.country,
-        billing_address:s.billing_address,
+        billing_address: s.billing_address,
         registration_no: s.registration_no,
         status: s.status,
         metadata: md,

@@ -56,9 +56,10 @@ const supabase = createClient(
 );
 
 // --- Main Route ---
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const approvalId = params.id;
+    const resolvedParams = await params;
+    const approvalId = resolvedParams.id;
 
     // 1️⃣ Fetch the main approval record
     const { data: approvalData, error: approvalError } = await supabase
@@ -149,13 +150,12 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     const nextApprover =
       currentStep?.profiles || currentStep?.roles
         ? {
-            role: (currentStep.roles as Role)?.name ?? null,
-            profile: (currentStep.profiles as Profile)
-              ? `${(currentStep.profiles as Profile)?.fname ?? ""} ${
-                  (currentStep.profiles as Profile)?.lname ?? ""
-                }`.trim()
-              : null,
-          }
+          role: (currentStep.roles as Role)?.name ?? null,
+          profile: (currentStep.profiles as Profile)
+            ? `${(currentStep.profiles as Profile)?.fname ?? ""} ${(currentStep.profiles as Profile)?.lname ?? ""
+              }`.trim()
+            : null,
+        }
         : null;
 
     // 5️⃣ Construct structured response

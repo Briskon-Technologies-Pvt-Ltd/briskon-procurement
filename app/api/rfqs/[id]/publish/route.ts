@@ -10,9 +10,10 @@ const supabase = createClient(
 
 // POST /api/rfqs/:id/publish
 // Accepts FormData: send_invitations (true/false), invited_supplier_ids (JSON arr) or invited_emails (JSON arr)
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const id = params.id;
+    const resolvedParams = await params;
+    const id = resolvedParams.id;
     const formData = await req.formData();
     const sendInvitations = (formData.get("send_invitations") as string) === "true";
     const invitedSupplierIdsRaw = (formData.get("invited_supplier_ids") as string) || null;

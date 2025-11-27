@@ -4,9 +4,10 @@ import { supabase } from "@/lib/supabaseClient";
 // GET /api/suppliers/[id]/performance
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const supplierId = params.id;
+  const resolvedParams = await params;
+  const supplierId = resolvedParams.id;
 
   try {
     if (!supplierId) {

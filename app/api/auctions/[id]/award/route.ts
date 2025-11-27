@@ -16,9 +16,10 @@ const supabase = createClient(
  *   "award_summary": "Optional text"
  * }
  */
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const auctionId = params.id;
+    const resolvedParams = await params;
+    const auctionId = resolvedParams.id;
     const body = await req.json();
     const { winning_bid_id, supplier_id, awarded_by, award_summary } = body;
 

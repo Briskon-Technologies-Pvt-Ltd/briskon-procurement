@@ -16,9 +16,10 @@ const supabase = createClient(
  *   "comments": "optional remarks or justification"
  * }
  */
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const proposalId = params.id;
+    const resolvedParams = await params;
+    const proposalId = resolvedParams.id;
     const body = await req.json();
     const { reviewed_by, status, comments } = body;
 

@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 
 export async function GET(
   req: Request,
-  context: { params: { supplierId: string } }
+  context: { params: Promise<{ supplierId: string }> }
 ) {
   try {
     const { supplierId } = await context.params;  // ⭐ REQUIRED FIX
@@ -46,13 +46,13 @@ export async function GET(
     const { data: categories } =
       mappings && mappings.length > 0
         ? await supabase
-            .from("categories")
-            .select("id,name")
-            .in(
-              "id",
-              mappings.map((m: any) => m.category_id)
-            )
-        : { data: [], error: null };
+          .from("categories")
+          .select("id,name")
+          .in(
+            "id",
+            mappings.map((m: any) => m.category_id)
+          )
+        : { data: [] };
 
     const { data: awards } = await supabase
       .from("awards")

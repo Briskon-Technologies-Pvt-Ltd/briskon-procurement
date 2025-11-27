@@ -112,14 +112,14 @@ export default function DashboardPage() {
               <YAxis />
               <Tooltip />
 
-                <Bar
+              <Bar
                 dataKey="total"
                 fill="url(#briskonBlue)"
                 radius={[8, 8, 0, 0]}  // soft rounded top edges
               />
             </BarChart>
           </ResponsiveContainer>
-                  
+
         </div>
 
         <div className="bg-white rounded-lg p-4 shadow-md border border-blue-200">
@@ -145,7 +145,7 @@ export default function DashboardPage() {
 
           {auctions.length === 0 ? (
             <p className="text-gray-500 text-sm">No auctions available.</p>
-          ) : auctions.map(a => (
+          ) : auctions.map((a: any) => (
             <div key={a.id} className="py-2 border-b border-gray-100 flex justify-between">
               <div>
                 <div className="font-medium">{a.title}</div>
@@ -185,22 +185,22 @@ export default function DashboardPage() {
 
       {/* Purchase Orders */}
       <div className="bg-white rounded-lg p-4 shadow-md border border-blue-200 mb-6">
-          <h3 className="font-semibold text-[#012b73] mb-3 text-xl">Purchase Orders</h3>
-          {purchaseOrders.map(po => (
-            <div key={po.id} className="py-2 flex justify-between border-b border-gray-100">
-              <div>
-                <div className="font-medium">{po.po_number} • {po.supplier_name}</div>
-                <div className="text-xs text-gray-500">{formatCurrency(po.total, po.currency)} • {po.status}</div>
-              </div>
-              <Download size={16} className="text-[#2f6efb]" />
+        <h3 className="font-semibold text-[#012b73] mb-3 text-xl">Purchase Orders</h3>
+        {purchaseOrders.map((po: any) => (
+          <div key={po.id} className="py-2 flex justify-between border-b border-gray-100">
+            <div>
+              <div className="font-medium">{po.po_number} • {po.supplier_name}</div>
+              <div className="text-xs text-gray-500">{formatCurrency(po.total, po.currency)} • {po.status}</div>
             </div>
-          ))}
-        </div>
+            <Download size={16} className="text-[#2f6efb]" />
+          </div>
+        ))}
+      </div>
 
       {/* ACTIVITY */}
       <div className="bg-white rounded-lg p-4 shadow-md border border-blue-200   mb-6">
         <h3 className="font-semibold text-[#012b73] mb-3 text-xl">Recent activity</h3>
-        {notifications.map(n => (
+        {notifications.map((n: any) => (
           <div key={n.id} className="py-2 border-b border-gray-100 flex justify-between text-xs">
             <span>{n.message}</span>
             <span className="text-xs text-gray-500">{timeAgo(n.created_at)}</span>
@@ -211,14 +211,14 @@ export default function DashboardPage() {
       {/* MESSAGES */}
       <div className="bg-white rounded-lg p-4 shadow-md border border-blue-200  mb-8">
         <h3 className="font-semibold text-[#012b73] mb-3 text-xl">Messages</h3>
-        {messages.map(m => (
+        {messages.map((m: any) => (
           <div key={m.id} className="py-2 border-b border-gray-100  flex justify-between text-xs">
-          <span>{m.subject}</span>
-          <span className="text-xs text-gray-500">{timeAgo(m.created_at)}</span>
+            <span>{m.subject}</span>
+            <span className="text-xs text-gray-500">{timeAgo(m.created_at)}</span>
           </div>
 
 
-    
+
 
 
         ))}

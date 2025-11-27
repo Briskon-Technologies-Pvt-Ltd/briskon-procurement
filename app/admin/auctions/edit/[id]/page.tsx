@@ -256,8 +256,8 @@ export default function AuctionEditPage() {
     }
 
     const originalSupplierIds = (initialSnapshot.suppliers || []).map((s: any) => s.id);
-    const toAddSuppliers = selectedSupplierIds.filter((id) => !originalSupplierIds.includes(id));
-    const toRemoveSuppliers = originalSupplierIds.filter((id) => !selectedSupplierIds.includes(id));
+    const toAddSuppliers = selectedSupplierIds.filter((id: string) => !originalSupplierIds.includes(id));
+    const toRemoveSuppliers = originalSupplierIds.filter((id: string) => !selectedSupplierIds.includes(id));
     if (toAddSuppliers.length || toRemoveSuppliers.length) {
       fields.visibility = { add: toAddSuppliers, remove: toRemoveSuppliers };
     }
@@ -508,7 +508,7 @@ export default function AuctionEditPage() {
               <ul className="mt-2 text-sm">
                 {newFiles.map((nf, idx) => (
                   <li key={idx} className="flex items-center justify-between py-1">
-                    <span>{nf.name} <span className="text-xs text-gray-400">({Math.round(nf.size/1024)} KB)</span></span>
+                    <span>{nf.name} <span className="text-xs text-gray-400">({Math.round(nf.size / 1024)} KB)</span></span>
                     <button disabled={!canEdit} type="button" onClick={() => removeNewFileAt(idx)} className="text-red-600 text-xs">Remove</button>
                   </li>
                 ))}

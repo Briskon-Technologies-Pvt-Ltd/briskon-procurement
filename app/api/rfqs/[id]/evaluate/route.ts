@@ -17,9 +17,10 @@ const supabase = createClient(
  *   ]
  * }
  */
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const rfqId = params.id;
+    const resolvedParams = await params;
+    const rfqId = resolvedParams.id;
     const body = await req.json();
 
     if (!body.evaluated_by || !Array.isArray(body.evaluations)) {

@@ -38,7 +38,8 @@ export async function GET(request: Request) {
             .select("id, rfq:rfqs ( title )")
             .eq("id", entityId)
             .single();
-          return data?.rfq?.title || `Auction ${entityId.slice(0, 6)}`;
+          const rfq = Array.isArray(data?.rfq) ? data.rfq[0] : data?.rfq;
+          return rfq?.title || `Auction ${entityId.slice(0, 6)}`;
         }
         case "purchase_order": {
           const { data } = await supabase.from("purchase_orders").select("po_number").eq("id", entityId).single();
@@ -66,16 +67,16 @@ export async function GET(request: Request) {
     const auctionsPromise = applyOrgFilter(supabase.from("auctions").select("id", { count: "exact" }));
     const suppliersPromise = applyOrgFilter(supabase.from("suppliers").select("id", { count: "exact" }), "org_onboarded_to");
     const awardsPromise = applyOrgFilter(supabase.from("awards").select("id", { count: "exact" }));
-  // Spend
+    // Spend
 
-  const spendPromise = applyOrgFilter(
-    supabase
-      .from("requisitions")
-      .select(`
+    const spendPromise = applyOrgFilter(
+      supabase
+        .from("requisitions")
+        .select(`
         estimated_value,
         category:categories!requisitions_category_id_fkey ( name )
       `)
-  );
+    );
     // Awards per month
     const awardsForPerfPromise = applyOrgFilter(supabase.from("awards").select("id, awarded_at"));
     // Cards Data
@@ -150,12 +151,12 @@ export async function GET(request: Request) {
         .limit(10),
       "recipient_profile_id"
     );
-// Force raw query without organization filtering
-const messagesPromise = supabase
-  .from("messages")
-  .select("id, body, created_at")
-  .order("created_at", { ascending: false })
-  .limit(10);
+    // Force raw query without organization filtering
+    const messagesPromise = supabase
+      .from("messages")
+      .select("id, body, created_at")
+      .order("created_at", { ascending: false })
+      .limit(10);
     const [
       requisitionsRes,
       rfqsRes,
@@ -197,18 +198,18 @@ const messagesPromise = supabase
 
     const spendRows = (spendRes.data ?? []) as AnyRecord[];
 
-const spendMap = new Map<string, number>();
+    const spendMap = new Map<string, number>();
 
-for (const row of spendRows) {
-  const key = row.category?.name || "Uncategorized";
-  const value = Number(row.estimated_value || 0);
-  spendMap.set(key, (spendMap.get(key) || 0) + value);
-}
+    for (const row of spendRows) {
+      const key = row.category?.name || "Uncategorized";
+      const value = Number(row.estimated_value || 0);
+      spendMap.set(key, (spendMap.get(key) || 0) + value);
+    }
 
-const spendByCategory = Array.from(spendMap.entries())
-  .map(([category, total]) => ({ category, total }))
-  .sort((a, b) => b.total - a.total)
-  .slice(0, 6);
+    const spendByCategory = Array.from(spendMap.entries())
+      .map(([category, total]) => ({ category, total }))
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 6);
 
 
     // Awards performance
@@ -285,7 +286,7 @@ const spendByCategory = Array.from(spendMap.entries())
       body: row.body,
       created_at: row.created_at
     }));
-    
+
     // FINAL PAYLOAD (structure unchanged)
     return NextResponse.json({
       kpis,

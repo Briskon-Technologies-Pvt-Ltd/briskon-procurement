@@ -19,9 +19,10 @@ const supabase = createClient(
  *   "metadata": { "signed_by": "John Smith" }
  * }
  */
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const awardId = params.id;
+    const resolvedParams = await params;
+    const awardId = resolvedParams.id;
     const body = await req.json();
     const {
       po_id,
@@ -124,9 +125,10 @@ export async function POST(req: Request, { params }: { params: { id: string } })
  * GET /api/awards/[id]/contract
  * Fetch contract linked to an award
  */
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const awardId = params.id;
+    const resolvedParams = await params;
+    const awardId = resolvedParams.id;
 
     const { data, error } = await supabase
       .from("contracts")

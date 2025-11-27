@@ -19,11 +19,11 @@ import {
   Line,
   XAxis,
   YAxis,
-   CartesianGrid,
+  CartesianGrid,
   ResponsiveContainer,
   BarChart as RBarChart,
   Bar,
- } from "recharts";
+} from "recharts";
 import { PieChart as RPieChart, Pie, Cell, Tooltip } from "recharts";
 
 
@@ -125,28 +125,28 @@ export default function AnalyticsPage() {
             <PieChart size={16} /> Category Spend Breakdown
           </h3>
           <ResponsiveContainer width="100%" height={250}>
-  <RPieChart>
-    <Pie
-      data={categorySpend}
-      cx="50%"
-      cy="50%"
-      outerRadius={80}
-      fill="#8884d8"
-      dataKey="value"
-      label={({ name, percent }) =>
-        `${name} ${(percent * 100).toFixed(0)}%`
-      }
-    >
-      {categorySpend.map((entry, index) => (
-        <Cell
-          key={`cell-${index}`}
-          fill={COLORS[index % COLORS.length]}
-        />
-      ))}
-    </Pie>
-    <Tooltip />
-  </RPieChart>
-</ResponsiveContainer>
+            <RPieChart>
+              <Pie
+                data={categorySpend}
+                cx="50%"
+                cy="50%"
+                outerRadius={80}
+                fill="#8884d8"
+                dataKey="value"
+                label={(props: any) =>
+                  `${props.name} ${(props.percent * 100).toFixed(0)}%`
+                }
+              >
+                {categorySpend.map((entry, index) => (
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={COLORS[index % COLORS.length]}
+                  />
+                ))}
+              </Pie>
+              <Tooltip />
+            </RPieChart>
+          </ResponsiveContainer>
 
         </div>
 

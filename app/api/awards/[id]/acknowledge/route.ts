@@ -17,9 +17,10 @@ const supabase = createClient(
  *   "acknowledged_at": "optional timestamp (auto if missing)"
  * }
  */
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const awardId = params.id;
+    const resolvedParams = await params;
+    const awardId = resolvedParams.id;
     const body = await req.json();
     const { supplier_id, acknowledged_by, comments } = body;
 

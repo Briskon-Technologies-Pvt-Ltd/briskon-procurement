@@ -10,9 +10,10 @@ const supabase = createClient(
  * GET /api/awards/[id]
  * Fetch detailed information for a specific award
  */
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const awardId = params.id;
+    const resolvedParams = await params;
+    const awardId = resolvedParams.id;
 
     const { data, error } = await supabase
       .from("awards")
@@ -53,9 +54,10 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
  *   "award_summary": "text (optional)"
  * }
  */
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const awardId = params.id;
+    const resolvedParams = await params;
+    const awardId = resolvedParams.id;
     const body = await req.json();
     const { updated_by, status, award_summary } = body;
 

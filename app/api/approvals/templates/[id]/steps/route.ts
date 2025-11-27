@@ -10,9 +10,10 @@ const supabase = createClient(
  * GET /api/approvals/templates/[id]/steps
  * Fetches all steps for a given template ID in ascending order
  */
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const templateId = params.id;
+    const resolvedParams = await params;
+    const templateId = resolvedParams.id;
 
     const { data, error } = await supabase
       .from("approval_steps")
@@ -60,9 +61,10 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
  *   "created_by": "profile_uuid"
  * }
  */
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const templateId = params.id;
+    const resolvedParams = await params;
+    const templateId = resolvedParams.id;
     const body = await req.json();
 
     const {

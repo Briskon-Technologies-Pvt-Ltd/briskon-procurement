@@ -23,9 +23,10 @@ const supabase = createClient(
  *   ]
  * }
  */
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const proposalId = params.id;
+    const resolvedParams = await params;
+    const proposalId = resolvedParams.id;
     const body = await req.json();
 
     const { uploaded_by, files } = body;
@@ -118,9 +119,10 @@ export async function POST(req: Request, { params }: { params: { id: string } })
  * GET /api/proposals/[id]/documents
  * Fetch all documents linked to a given proposal submission
  */
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const proposalId = params.id;
+    const resolvedParams = await params;
+    const proposalId = resolvedParams.id;
 
     const { data, error } = await supabase
       .from("proposal_documents")

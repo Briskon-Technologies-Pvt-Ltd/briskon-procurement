@@ -10,9 +10,10 @@ const supabase = createClient(
  * GET /api/auctions/[id]/visibility
  * Fetch all suppliers, groups, and categories that have visibility to the auction.
  */
-export async function GET(_req: Request, { params }: { params: { id: string } }) {
+export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const auctionId = params.id;
+    const resolvedParams = await params;
+    const auctionId = resolvedParams.id;
 
     const { data, error } = await supabase
       .from("auction_visibility")
@@ -55,9 +56,10 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
  *   "created_by": "uuid"
  * }
  */
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const auctionId = params.id;
+    const resolvedParams = await params;
+    const auctionId = resolvedParams.id;
     const body = await req.json();
 
     const {

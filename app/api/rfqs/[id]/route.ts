@@ -9,9 +9,10 @@ const supabase = createClient(
 );
 
 // ===================== GET /api/rfqs/:id =====================
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const id = params.id;
+    const resolvedParams = await params;
+    const id = resolvedParams.id;
     // fetch rfq header
     const { data: rfq, error: rfqErr } = await supabase.from("rfqs").select("*").eq("id", id).single();
     if (rfqErr) return NextResponse.json({ error: "RFQ not found" }, { status: 404 });
@@ -42,9 +43,10 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 
 // ===================== PUT /api/rfqs/:id =====================
 // Expect FormData for fields and optional files; only allowed when status = draft
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const id = params.id;
+    const resolvedParams = await params;
+    const id = resolvedParams.id;
     const formData = await req.formData();
 
     // fetch current rfq
@@ -141,9 +143,10 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
 
 // ===================== DELETE /api/rfqs/:id =====================
 // perform soft-delete (set status = archived)
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const id = params.id;
+    const resolvedParams = await params;
+    const id = resolvedParams.id;
     const { data: rfq, error: rfqErr } = await supabase.from("rfqs").select("status").eq("id", id).single();
     if (rfqErr) return NextResponse.json({ error: "RFQ not found" }, { status: 404 });
 
