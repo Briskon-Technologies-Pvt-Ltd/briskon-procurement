@@ -1,6 +1,5 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-
 // --- Type Definitions ---
 interface Profile {
   id: string;
@@ -46,7 +45,10 @@ const supabase = createClient(
 );
 
 // --- GET /api/approvals/[id]/history ---
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
     const approvalId = params.id;
 
