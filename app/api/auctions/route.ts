@@ -28,7 +28,40 @@ export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
     const id = url.searchParams.get("id");
+    const rfqIdParam = url.searchParams.get("rfq_id");
 
+    /* --------------------------------------------------------
+       OPTIONAL: Lookup Auction by RFQ ID (NON-BREAKING)
+    -------------------------------------------------------- */
+    if (rfqIdParam) {
+      const rfqUUID = ensureUUID(rfqIdParam);
+      if (!rfqUUID)
+        return NextResponse.json(
+          { success: false, error: "Invalid rfq_id" },
+          { status: 400 }
+        );
+    
+      const { data: auctionRow, error: findErr } = await supabase
+        .from("auctions")
+        .select("*")
+        .eq("rfq_id", rfqUUID)
+        .maybeSingle();
+    
+      if (findErr) throw findErr;
+    
+      if (!auctionRow) {
+        return NextResponse.json({
+          success: false,
+          error: "Auction not found for this RFQ",
+        });
+      }
+    
+      return NextResponse.json({
+        success: true,
+        auction: auctionRow,
+      });
+    }
+    
     /* --------------------------------------------------------
        1) GET SINGLE AUCTION
     -------------------------------------------------------- */

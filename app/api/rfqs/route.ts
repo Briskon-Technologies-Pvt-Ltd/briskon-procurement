@@ -38,7 +38,6 @@ export async function POST(req: Request) {
     const rfqId = uuidv4();
     const uploadedDocs: any[] = [];
 
-    // ---------- Upload docs ----------
     for (const file of files) {
       try {
         const ext = file.name.split(".").pop();
@@ -65,7 +64,6 @@ export async function POST(req: Request) {
       }
     }
 
-    // ---------- Insert RFQ ----------
     await supabase.from("rfqs").insert([
       {
         id: rfqId,
@@ -82,7 +80,6 @@ export async function POST(req: Request) {
       },
     ]);
 
-    // ---------- Insert items ----------
     if (items.length) {
       await supabase.from("rfq_items").insert(
         items.map((i: any) => ({
@@ -97,7 +94,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // ---------- Insert invited suppliers ----------
     if (invitedSupplierIds.length) {
       await supabase.from("rfq_invited_suppliers").insert(
         invitedSupplierIds.map((sid: string) => ({
@@ -127,9 +123,7 @@ export async function GET(req: Request) {
     const url = new URL(req.url);
     const id = url.searchParams.get("id");
 
-    // ======================================================
-    //            📄 SINGLE RFQ VIEW (WITH AWARD DATA)
-// ======================================================
+    // ---------- SINGLE RFQ ----------
     if (id) {
       const { data: rfq, error } = await supabase
         .from("rfqs")
@@ -174,7 +168,6 @@ export async function GET(req: Request) {
         }));
       }
 
-      // 🔥 Load award data for this RFQ
       const { data: awardData } = await supabase
         .from("awards")
         .select("supplier_id, awarded_at")
@@ -199,53 +192,116 @@ export async function GET(req: Request) {
       );
     }
 
-    // ======================================================
-    //            📄 LIST ALL RFQs (SUPER FAST)
-    // ======================================================
-    const { data: rfqs, error } = await supabase
-      .from("rfqs")
-      .select("id, title, organization_id, status, visibility, currency, created_at, end_at, requisition_id")
-      .order("created_at", { ascending: false });
+// ---------- LIST RFQs ----------
+const { data: rfqs, error } = await supabase
+  .from("rfqs")
+  .select("id, title, organization_id, status, visibility, currency, created_at, end_at, requisition_id")
+  .order("created_at", { ascending: false });
 
-    if (error) throw error;
-    if (!rfqs.length)
-      return NextResponse.json({ success: true, rfqs: [] }, { status: 200 });
+if (error) throw error;
+if (!rfqs.length) return NextResponse.json({ success: true, rfqs: [] });
 
-    const rfqIds = rfqs.map((r) => r.id);
+/* ---- Load item count ---- */
+const { data: itemsCountData } = await supabase
+  .from("rfq_items")
+  .select("rfq_id, id");
 
-    const { data: itemsCountData } = await supabase
-      .from("rfq_items")
-      .select("rfq_id, id");
+const itemCountMap: Record<string, number> = {};
+itemsCountData?.forEach((r) => {
+  itemCountMap[r.rfq_id] = (itemCountMap[r.rfq_id] || 0) + 1;
+});
 
-    const itemCountMap: Record<string, number> = {};
-    itemsCountData?.forEach((r) => {
-      itemCountMap[r.rfq_id] = (itemCountMap[r.rfq_id] || 0) + 1;
-    });
+/* ---- Load invited suppliers ---- */
+const { data: inviteData } = await supabase
+  .from("rfq_invited_suppliers")
+  .select("rfq_id, supplier_id");
 
-    const { data: inviteCountData } = await supabase
-      .from("rfq_invited_suppliers")
-      .select("rfq_id, id");
+const inviteCountMap: Record<string, number> = {};
+const rfqSupplierMap: Record<string, string[]> = {};
 
-    const inviteCountMap: Record<string, number> = {};
-    inviteCountData?.forEach((r) => {
-      inviteCountMap[r.rfq_id] = (inviteCountMap[r.rfq_id] || 0) + 1;
-    });
+inviteData?.forEach((row) => {
+  inviteCountMap[row.rfq_id] = (inviteCountMap[row.rfq_id] || 0) + 1;
+  if (!rfqSupplierMap[row.rfq_id]) rfqSupplierMap[row.rfq_id] = [];
+  rfqSupplierMap[row.rfq_id].push(row.supplier_id);
+});
 
-    const { data: proposalCountData } = await supabase
-      .from("proposal_submissions")
-      .select("rfq_id, id");
+/* ---- Fetch supplier names ---- */
+const allSupplierIds = Array.from(
+  new Set(inviteData?.map((i) => i.supplier_id) || [])
+);
 
-    const proposalCountMap: Record<string, number> = {};
-    proposalCountData?.forEach((r) => {
-      proposalCountMap[r.rfq_id] = (proposalCountMap[r.rfq_id] || 0) + 1;
-    });
+let supplierNameMap: Record<string, string> = {};
 
-    const enriched = rfqs.map((r) => ({
-      ...r,
-      items_count: itemCountMap[r.id] || 0,
-      invited_suppliers_count: inviteCountMap[r.id] || 0,
-      received_proposals: proposalCountMap[r.id] || 0,
-    }));
+if (allSupplierIds.length > 0) {
+  const { data: supplierRecords } = await supabase
+    .from("suppliers")
+    .select("id, company_name")
+    .in("id", allSupplierIds);
+
+  supplierRecords?.forEach((s) => {
+    supplierNameMap[s.id] = s.company_name;
+  });
+}
+
+/* ---- Load proposals ---- */
+const { data: proposalCountData } = await supabase
+  .from("proposal_submissions")
+  .select("rfq_id, id");
+
+const proposalCountMap: Record<string, number> = {};
+proposalCountData?.forEach((p) => {
+  proposalCountMap[p.rfq_id] = (proposalCountMap[p.rfq_id] || 0) + 1;
+});
+
+/* ---- Load Auctions → find linked Auction IDs ---- */
+const { data: auctionRows } = await supabase
+  .from("auctions")
+  .select("id, rfq_id");
+
+const auctionMap: Record<string, string> = {};
+auctionRows?.forEach((a) => {
+  if (a.rfq_id) auctionMap[a.rfq_id] = a.id;
+});
+
+/* ---- Load Bid counts for auctions ---- */
+const { data: bidCounts } = await supabase
+  .from("bids")
+  .select("auction_id, id");
+
+const bidCountMap: Record<string, number> = {};
+bidCounts?.forEach((b) => {
+  bidCountMap[b.auction_id] = (bidCountMap[b.auction_id] || 0) + 1;
+});
+
+/* ---- Award Map ---- */
+const { data: awardRows } = await supabase
+  .from("awards")
+  .select("id, rfq_id");
+
+const awardMap: Record<string, string> = {};
+awardRows?.forEach((a) => {
+  if (a.rfq_id) awardMap[a.rfq_id] = a.id;
+});
+
+/* ---- Create response list ---- */
+const enriched = rfqs.map((r) => ({
+  ...r,
+  items_count: itemCountMap[r.id] || 0,
+  invited_suppliers_count: inviteCountMap[r.id] || 0,
+  invited_suppliers:
+    rfqSupplierMap[r.id]?.map((sid) => ({
+      id: sid,
+      company_name: supplierNameMap[sid] || "",
+    })) || [],
+  received_proposals:
+    r.status === "converted_to_auction"
+      ? bidCountMap[auctionMap[r.id]] || 0
+      : proposalCountMap[r.id] || 0,
+  award_id: awardMap[r.id] || null,
+}));
+
+return NextResponse.json({ success: true, rfqs: enriched }, { status: 200 });
+
 
     return NextResponse.json({ success: true, rfqs: enriched }, { status: 200 });
   } catch (err: any) {

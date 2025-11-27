@@ -161,7 +161,7 @@ export default function RequisitionsPage() {
               onClick={() => router.push("/admin/requisitions/new")}
                 className="cta-btn primary flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer"
               >
-             <PlusCircle size={18} /> Create Requisition
+             <PlusCircle size={16} /> Create Requisition
             </button>
           </div>
       {/* KPI ROW */}

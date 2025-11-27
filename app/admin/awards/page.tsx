@@ -26,7 +26,7 @@ import {
 const STATUS_COLORS: Record<string, string> = {
   issued: "#2f6efb",
   pending: "#f59e0b",
-  completed: "#0eb25c",
+  completed: "#93C5FD",
 };
 
 export default function AwardsPage() {
@@ -92,28 +92,33 @@ export default function AwardsPage() {
      
       {/* KPI CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white border p-4 rounded-lg shadow-md">
+        <div className="bg-white border border-blue-200 p-4 rounded-lg shadow-md hover:border-blue-500">
           <div className="text-xs text-gray-500">Total Awards</div>
           <div className="text-2xl font-bold">{totalAwards}</div>
         </div>
-        <div className="bg-white border p-4 rounded-lg shadow-md">
+        <div className="bg-white border border-blue-200 p-4 rounded-lg shadow-md hover:border-blue-500">
           <div className="text-xs text-gray-500">Issued</div>
           <div className="text-2xl font-bold text-blue-600">{issuedAwards}</div>
         </div>
-        <div className="bg-white border p-4 rounded-lg shadow-md">
+        <div className="bg-white border border-blue-200 p-4 rounded-lg shadow-md hover:border-blue-500">
           <div className="text-xs text-gray-500">Pending PO</div>
           <div className="text-2xl font-bold text-yellow-600">{pendingAwards}</div>
         </div>
-        <div className="bg-white border p-4 rounded-lg shadow-md">
+        <div className="bg-white border border-blue-200 p-4 rounded-lg shadow-md hover:border-blue-500">
           <div className="text-xs text-gray-500">Completed</div>
           <div className="text-2xl font-bold text-green-600">{completedAwards}</div>
         </div>
       </div>
 
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-xl font-semibold text-[#012b73]">Award Details</h2>
+        <div className="flex-1 h-[1px] bg-blue-600 ml-4" />
+      </div>
+
       {/* FILTERS + TABLE + CHARTS */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* TABLE */}
-        <div className="bg-white rounded-lg p-4 shadow-md border lg:col-span-3">
+        <div className="bg-white rounded p-4 shadow-md border border-blue-200  lg:col-span-3">
           {/* Search + Filter */}
           <div className="flex justify-between mb-4">
             <div className="flex items-center gap-2">
@@ -144,12 +149,12 @@ export default function AwardsPage() {
 
           {/* TABLE */}
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-100 text-gray-600 text-xs uppercase border-b">
+            <table className="w-full text-xs">
+              <thead className="bg-blue-100 text-gray-600 text-xs uppercase border-b">
                 <tr>
                   <th className="p-3 text-left">Award ID</th>
-                  <th className="p-3 text-left">RFQ</th>
-                  <th className="p-3 text-left">Supplier</th>
+                  <th className="p-3 text-left">RFQ Name </th>
+                  <th className="p-3 text-left">Supplier Name</th>
                   <th className="p-3 text-right">Value</th>
                   <th className="p-3 text-center">Status</th>
                   <th className="p-3 text-center">Date</th>
@@ -158,7 +163,7 @@ export default function AwardsPage() {
               </thead>
               <tbody>
                 {filteredData.map((a) => (
-                  <tr key={a.id} className="border-b hover:bg-[#f5f7fb] transition">
+                  <tr key={a.id} className="border-b border-blue-100 hover:bg-[#f5f7fb] transition">
                     <td className="p-3 text-[#012b73] font-medium">{a.id.slice(0, 8)}</td>
                     <td className="p-3">{a.rfqs?.title}</td>
                     <td className="p-3">{a.suppliers?.company_name}</td>
@@ -167,7 +172,7 @@ export default function AwardsPage() {
                     </td>
                     <td className="p-3 text-center">
                       <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        className={`px-2 py-1 rounded-full text-xs ${
                           a.status === "issued"
                             ? "bg-blue-100 text-blue-700"
                             : a.status === "pending"
@@ -184,7 +189,7 @@ export default function AwardsPage() {
                     <td className="p-3 text-center">
                       <button
                         onClick={() => router.push(`/admin/awards/${a.id}`)}
-                        className="text-[#2f6efb] hover:text-[#1952c3]"
+                        className="text-green-500 hover:text-blue-500 cursor-pointer"
                       >
                         <Eye size={16} />
                       </button>
@@ -201,8 +206,8 @@ export default function AwardsPage() {
         </div>
 
         {/* CHARTS */}
-        <div className="bg-white rounded-lg shadow-md border p-4">
-          <h3 className="font-semibold text-[#012b73] mb-3">Awards by Status</h3>
+        <div className="bg-white rounded shadow-md border border-blue-200 p-4">
+          <h3 className="font-semibold text-xl text-[#012b73] mb-3">Awards by Status</h3>
 
           <ResponsiveContainer width="100%" height={200}>
             <PieChart>
@@ -224,10 +229,10 @@ export default function AwardsPage() {
             </PieChart>
           </ResponsiveContainer>
 
-          <hr className="my-4" />
+          <hr className="my-4 text-blue-200" />
 
-          <h3 className="font-semibold text-[#012b73] mb-3">
-            Award Value by Month (Sample)
+          <h3 className="font-semibold text-xl text-[#012b73] mb-3">
+            Award Value by Month
           </h3>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={barData}>
